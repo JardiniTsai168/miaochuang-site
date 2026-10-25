@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.DS_Store
+coverage/
+*.log
+
+# OpenClaw agent workspace files — never publish to the product repository.
+.bootstrap-defaults/
+memory/
+AGENTS.md
+DREAMS.md
+HEARTBEAT.md
+IDENTITY.md
+MEMORY.md
+SOUL.md
+USER.md
+brand-assets
+lihi-shared
