@@ -1,4 +1,4 @@
-export type TemplateId = 'editorial' | 'vivid' | 'calm'
+export type TemplateId = 'editorial' | 'vivid' | 'calm' | 'compact' | 'mosaic'
 
 export type BusinessPhoto = {
   id: string

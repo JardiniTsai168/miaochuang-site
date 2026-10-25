@@ -33,6 +33,8 @@ const templates: Array<{ id: TemplateId; name: string; note: string; accent: str
   { id: 'editorial', name: '日常誌', note: '溫暖、故事感', accent: '#B85D3F' },
   { id: 'vivid', name: '招牌感', note: '醒目、有活力', accent: '#E65463' },
   { id: 'calm', name: '留白所', note: '安靜、質感', accent: '#607A68' },
+  { id: 'compact', name: '店家名片', note: '精簡、資訊優先', accent: '#315D68' },
+  { id: 'mosaic', name: '照片誌', note: '拼貼、影像主導', accent: '#8A4D76' },
 ]
 
 const importSteps = ['確認商家網址', '整理照片與評論', '生成網站文案', '準備三種版型']
@@ -283,7 +285,7 @@ function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (pa
 function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
   return (
     <div className="editor-section template-editor">
-      <div className="editor-heading"><div><p>網站風格</p><h2>先挑一個最像你店裡的版型</h2></div><span className="count-badge">3 選 1</span></div>
+      <div className="editor-heading"><div><p>網站風格</p><h2>先挑一個最像你店裡的版型</h2></div><span className="count-badge">5 選 1</span></div>
       <p className="editor-help">切換後右側會立即更新。內容不會消失，之後也能隨時回來更換。</p>
       <TemplateSwitcher draft={draft} update={update} />
       <div className="template-detail">

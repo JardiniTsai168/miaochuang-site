@@ -35,11 +35,13 @@ describe('App', () => {
     expect(screen.getByText(/lihiDomain 帳號、網域搜尋、結帳與部署/)).toBeInTheDocument()
   })
 
-  it('makes all three website templates visible and selectable', async () => {
+  it('makes all five website templates visible and selectable', async () => {
     const user = userEvent.setup()
     saveDraft(createDemoBusiness())
     render(<App />)
     expect(screen.getByRole('heading', { name: /先挑一個最像你店裡的版型/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /店家名片/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /照片誌/ })).toBeInTheDocument()
     const vivid = screen.getByRole('button', { name: /招牌感/ })
     await user.click(vivid)
     expect(vivid).toHaveAttribute('aria-pressed', 'true')

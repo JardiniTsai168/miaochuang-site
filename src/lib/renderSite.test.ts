@@ -20,7 +20,7 @@ describe('renderSite', () => {
     expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
   })
 
-  it.each(['editorial', 'vivid', 'calm'] as const)('renders the %s template', (template) => {
+  it.each(['editorial', 'vivid', 'calm', 'compact', 'mosaic'] as const)('renders the %s template', (template) => {
     const html = renderSite({ ...createDemoBusiness(), template })
     expect(html).toContain('--accent:')
     expect(html).toContain('Powered by lihiDomain')
