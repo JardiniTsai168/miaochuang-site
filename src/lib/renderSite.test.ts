@@ -25,4 +25,11 @@ describe('renderSite', () => {
     expect(html).toContain('--accent:')
     expect(html).toContain('Powered by lihiDomain')
   })
+
+  it('opens external preview links outside the iframe without breaking internal anchors', () => {
+    const html = renderSite(createDemoBusiness())
+    expect(html).toContain('<base target="_blank">')
+    expect(html).toContain('href="#about" target="_self"')
+    expect(html).toContain('target="_blank" rel="noopener noreferrer">查看地圖</a>')
+  })
 })

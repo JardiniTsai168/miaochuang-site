@@ -8,9 +8,11 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Laptop,
+  LayoutTemplate,
   MapPin,
   MessageSquareQuote,
   Palette,
+  Pencil,
   RefreshCw,
   RotateCcw,
   Smartphone,
@@ -24,7 +26,8 @@ import { openPreview, renderSite, templateNames } from './lib/renderSite'
 import { importBusiness, isGoogleBusinessUrl } from './lib/source'
 import type { AppStage, BusinessDraft, PreviewViewport, TemplateId } from './types'
 
-type EditorTab = 'content' | 'photos' | 'reviews'
+type EditorTab = 'template' | 'content' | 'photos' | 'reviews'
+type StudioView = 'edit' | 'preview'
 
 const templates: Array<{ id: TemplateId; name: string; note: string; accent: string }> = [
   { id: 'editorial', name: '日常誌', note: '溫暖、故事感', accent: '#B85D3F' },
@@ -266,7 +269,9 @@ function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (pa
           onClick={() => update({ template: template.id, accent: template.accent })}
           aria-pressed={draft.template === template.id}
         >
-          <span style={{ '--template-accent': template.accent } as React.CSSProperties} />
+          <span className={`template-thumb is-${template.id}`} style={{ '--template-accent': template.accent } as React.CSSProperties}>
+            <i /><i /><i />
+          </span>
           <div><strong>{template.name}</strong><small>{template.note}</small></div>
           {draft.template === template.id && <Check size={15} aria-hidden="true" />}
         </button>
@@ -275,9 +280,25 @@ function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (pa
   )
 }
 
+function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
+  return (
+    <div className="editor-section template-editor">
+      <div className="editor-heading"><div><p>網站風格</p><h2>先挑一個最像你店裡的版型</h2></div><span className="count-badge">3 選 1</span></div>
+      <p className="editor-help">切換後右側會立即更新。內容不會消失，之後也能隨時回來更換。</p>
+      <TemplateSwitcher draft={draft} update={update} />
+      <div className="template-detail">
+        <span>目前選擇</span>
+        <strong>{templateNames[draft.template]}</strong>
+        <p>{templates.find((template) => template.id === draft.template)?.note}，適合用照片和空間氛圍建立第一印象。</p>
+      </div>
+    </div>
+  )
+}
+
 function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDraft; mode: 'demo' | 'live'; onChange: (draft: BusinessDraft) => void; onReady: () => void; onReset: () => void }) {
-  const [tab, setTab] = useState<EditorTab>('content')
+  const [tab, setTab] = useState<EditorTab>('template')
   const [viewport, setViewport] = useState<PreviewViewport>('desktop')
+  const [studioView, setStudioView] = useState<StudioView>('edit')
   const html = useMemo(() => renderSite(draft), [draft])
 
   function update(patch: Partial<BusinessDraft>) {
@@ -285,7 +306,8 @@ function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDr
   }
 
   const tabs: Array<{ id: EditorTab; label: string; icon: React.ReactNode }> = [
-    { id: 'content', label: '內容', icon: <Sparkles size={17} /> },
+    { id: 'template', label: '版型', icon: <LayoutTemplate size={17} /> },
+    { id: 'content', label: '內容', icon: <Pencil size={17} /> },
     { id: 'photos', label: '照片', icon: <ImageIcon size={17} /> },
     { id: 'reviews', label: '評論', icon: <MessageSquareQuote size={17} /> },
   ]
@@ -298,22 +320,27 @@ function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDr
         <span>{mode === 'demo' ? '目前使用示範資料' : 'Google 商家資料已匯入'}</span>
         <span>預覽剩餘 {formatRemainingTime(draft.expiresAt)}</span>
       </div>
+      <div className="mobile-studio-switch" aria-label="工作區顯示">
+        <button type="button" className={studioView === 'edit' ? 'active' : ''} onClick={() => setStudioView('edit')}><Pencil size={16} /> 編輯資料</button>
+        <button type="button" className={studioView === 'preview' ? 'active' : ''} onClick={() => setStudioView('preview')}><Laptop size={16} /> 查看網站</button>
+      </div>
       <main className="studio-layout">
-        <aside className="control-panel">
-          <div className="panel-top"><p>步驟 2 / 3</p><h1>確認你的網站</h1></div>
+        <aside className={`control-panel ${studioView === 'edit' ? 'is-mobile-active' : ''}`}>
+          <div className="panel-top"><p>步驟 2 / 3</p><h1>設計你的網站</h1><span>先選版型，再確認內容與照片。</span></div>
           <nav className="editor-tabs" aria-label="編輯網站資料">
             {tabs.map((item) => <button key={item.id} type="button" className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}>{item.icon}{item.label}</button>)}
           </nav>
           <div className="panel-scroll">
+            {tab === 'template' && <TemplateEditor draft={draft} update={update} />}
             {tab === 'content' && <ContentEditor draft={draft} update={update} onRegenerate={() => onChange(regenerateCopy(draft))} />}
             {tab === 'photos' && <PhotoEditor draft={draft} update={update} />}
             {tab === 'reviews' && <ReviewEditor draft={draft} update={update} />}
           </div>
         </aside>
 
-        <section className="preview-workspace" aria-label="網站預覽">
+        <section className={`preview-workspace ${studioView === 'preview' ? 'is-mobile-active' : ''}`} aria-label="網站預覽">
           <div className="preview-toolbar">
-            <div><span>版型</span><strong>{templateNames[draft.template]}</strong></div>
+            <div><span>即時預覽</span><strong>{templateNames[draft.template]}</strong></div>
             <div className="viewport-switcher" aria-label="預覽尺寸">
               <button type="button" className={viewport === 'desktop' ? 'active' : ''} onClick={() => setViewport('desktop')} aria-label="桌面版預覽"><Laptop size={18} /></button>
               <button type="button" className={viewport === 'mobile' ? 'active' : ''} onClick={() => setViewport('mobile')} aria-label="手機版預覽"><Smartphone size={18} /></button>
@@ -326,7 +353,6 @@ function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDr
               <iframe title={`${draft.name}網站預覽`} srcDoc={html} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" />
             </div>
           </div>
-          <div className="template-dock"><p>選擇版型</p><TemplateSwitcher draft={draft} update={update} /></div>
         </section>
       </main>
       <div className="studio-cta"><div><strong>內容都確認好了嗎？</strong><span>下一步將選擇品牌網址；本階段先展示交接畫面。</span></div><button className="primary-button" type="button" onClick={onReady}>確認網站，前往選網址 <ChevronRight size={18} /></button></div>
@@ -341,9 +367,8 @@ function Ready({ draft, onBack, onReset }: { draft: BusinessDraft; onBack: () =>
       <main className="ready-layout">
         <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> 回到網站預覽</button>
         <div className="ready-copy">
-          <span className="ready-check"><Check size={28} /></span>
-          <p className="eyebrow">網站草稿已準備完成</p>
-          <h1>{draft.name}<br />現在只差一個正式網址。</h1>
+          <div className="ready-title-row"><span className="ready-check"><Check size={22} /></span><p className="eyebrow">網站草稿已準備完成</p></div>
+          <h1>下一步，替「{draft.name}」選一個正式網址</h1>
           <p>你的內容、照片與「{templateNames[draft.template]}」版型都已儲存。lihiDomain 串接完成後，這裡會直接顯示可購買的網域名稱與價格。</p>
           <div className="ready-actions"><button className="primary-button" type="button" disabled>搜尋可用網域（下一階段串接）</button><button className="secondary-button" type="button" onClick={() => openPreview(draft)}>再次查看網站 <ExternalLink size={15} /></button></div>
         </div>
@@ -358,11 +383,12 @@ function Ready({ draft, onBack, onReset }: { draft: BusinessDraft; onBack: () =>
 }
 
 export default function App() {
+  const demoStage = useMemo(() => new URLSearchParams(window.location.search).get('demo'), [])
   const existing = useMemo(() => {
-    if (new URLSearchParams(window.location.search).get('demo') === 'studio') return createDemoBusiness()
+    if (demoStage === 'studio' || demoStage === 'ready') return createDemoBusiness()
     return loadDraft()
-  }, [])
-  const [stage, setStage] = useState<AppStage>(existing ? 'studio' : 'landing')
+  }, [demoStage])
+  const [stage, setStage] = useState<AppStage>(demoStage === 'ready' ? 'ready' : existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'live'>('demo')
   const [importStep, setImportStep] = useState(0)

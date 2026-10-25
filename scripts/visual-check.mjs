@@ -12,7 +12,12 @@ const cases = [
   { name: 'landing-desktop', path: '/', width: 1440, height: 1000 },
   { name: 'landing-mobile', path: '/', width: 390, height: 844 },
   { name: 'studio-desktop', path: '/?demo=studio', width: 1440, height: 1000 },
+  { name: 'studio-vivid-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '招牌感' },
+  { name: 'studio-calm-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '留白所' },
   { name: 'studio-mobile', path: '/?demo=studio', width: 390, height: 844 },
+  { name: 'studio-preview-mobile', path: '/?demo=studio', width: 390, height: 844, click: '查看網站' },
+  { name: 'ready-desktop', path: '/?demo=ready', width: 1440, height: 1000 },
+  { name: 'ready-mobile', path: '/?demo=ready', width: 390, height: 844 },
 ]
 
 const results = []
@@ -20,16 +25,30 @@ for (const item of cases) {
   const page = await browser.newPage({ viewport: { width: item.width, height: item.height }, deviceScaleFactor: 1 })
   await page.goto(`${baseUrl}${item.path}`, { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(1_200)
+  if (item.click) {
+    await page.getByRole('button', { name: new RegExp(item.click) }).click()
+    await page.waitForTimeout(500)
+  }
+  let previewLinkSafe
+  if (item.name === 'studio-desktop') {
+    const preview = page.frameLocator('iframe[title$="網站預覽"]')
+    const [popup] = await Promise.all([
+      page.waitForEvent('popup'),
+      preview.getByRole('link', { name: '查看地圖' }).click(),
+    ])
+    previewLinkSafe = page.url().includes('demo=studio')
+    await popup.close()
+  }
   const dimensions = await page.evaluate(() => ({
     viewport: window.innerWidth,
     content: document.documentElement.scrollWidth,
   }))
   await page.screenshot({ path: `${outputDir}/${item.name}.png`, fullPage: false })
-  results.push({ ...item, ...dimensions, overflow: dimensions.content > dimensions.viewport })
+  results.push({ ...item, ...dimensions, overflow: dimensions.content > dimensions.viewport, ...(previewLinkSafe === undefined ? {} : { previewLinkSafe }) })
   await page.close()
 }
 
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow)) process.exitCode = 1
+if (results.some((result) => result.overflow || result.previewLinkSafe === false)) process.exitCode = 1
