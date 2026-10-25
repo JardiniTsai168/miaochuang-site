@@ -181,15 +181,15 @@ function variantStyles(template: TemplateId): string {
 
 function heroSizingStyles(template: TemplateId): string {
   if (template === 'editorial' || template === 'vivid') {
-    return `.hero{min-height:480px;align-items:center}.hero-content{padding-top:72px;padding-bottom:18px}.hero h1{font-size:clamp(2.8rem,6vw,5rem)}@media(max-width:759px){.hero{min-height:420px}.hero-content{padding-top:64px;padding-bottom:14px}.hero h1{font-size:clamp(2.5rem,12vw,3.7rem)}}`
+    return `.hero{min-height:320px;align-items:center}.hero-content{padding-top:52px;padding-bottom:4px}.hero h1{font-size:clamp(2.4rem,5vw,3.6rem)}@media(max-width:759px){.hero{min-height:320px}.hero-content{padding-top:50px;padding-bottom:4px}.hero h1{font-size:clamp(2.2rem,9.5vw,2.7rem)}}`
   }
   if (template === 'calm') {
-    return `.hero-media{min-height:420px}.hero-content{padding-top:54px;padding-bottom:36px}@media(max-width:759px){.hero-media{min-height:190px}.hero-content{padding-top:0;padding-bottom:20px}}`
+    return `.hero-media{min-height:260px}.hero-content{padding-top:28px;padding-bottom:18px}@media(max-width:759px){.hero-media{min-height:130px}.hero-content{padding-top:0;padding-bottom:14px}}`
   }
   if (template === 'compact') {
-    return `.hero-media{min-height:350px}.hero-content{padding:42px}@media(max-width:759px){.hero-media{min-height:180px}.hero-content{padding:24px 20px}}`
+    return `.hero-media{min-height:220px}.hero-content{padding:26px}@media(max-width:759px){.hero-media{min-height:120px}.hero-content{padding:18px}}`
   }
-  return `.hero-media{min-height:420px}.hero-content{padding-top:28px;padding-bottom:24px}@media(max-width:759px){.hero-media{min-height:240px}.hero-content{padding-top:4px;padding-bottom:18px}}`
+  return `.hero-media{min-height:280px}.hero-content{padding-top:14px;padding-bottom:16px}@media(max-width:759px){.hero-media{min-height:160px}.hero-content{padding-top:0;padding-bottom:12px}}`
 }
 
 export function renderSite(draft: BusinessDraft): string {
