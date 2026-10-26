@@ -24,6 +24,22 @@ describe('renderSite', () => {
     const html = renderSite({ ...createDemoBusiness(), template })
     expect(html).toContain('--accent:')
     expect(html).toContain('Powered by lihiDomain')
+    expect(html).toContain('class="industry-art"')
+    expect(html).toContain('class="identity-strip"')
+    expect(html).toContain('class="hero-index"')
+  })
+
+  it('adds an industry-specific illustration from the business category', () => {
+    const html = renderSite(createDemoBusiness())
+    expect(html).toContain('data-industry="cafe"')
+    expect(html).toContain('COFFEE CULTURE')
+    expect(html).toContain('咖啡杯插圖')
+  })
+
+  it('keeps the vivid template title on one line', () => {
+    const html = renderSite({ ...createDemoBusiness(), template: 'vivid' })
+    expect(html).toContain('white-space:nowrap')
+    expect(html).toMatch(/<h1 style="--title-size:\d+px">日光散步珈琲<\/h1>/)
   })
 
   it('opens external preview links outside the iframe without breaking internal anchors', () => {

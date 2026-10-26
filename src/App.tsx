@@ -30,11 +30,11 @@ type EditorTab = 'template' | 'content' | 'photos' | 'reviews'
 type StudioView = 'edit' | 'preview'
 
 const templates: Array<{ id: TemplateId; name: string; note: string; accent: string }> = [
-  { id: 'editorial', name: '日常誌', note: '溫暖、故事感', accent: '#B85D3F' },
-  { id: 'vivid', name: '招牌感', note: '醒目、有活力', accent: '#E65463' },
-  { id: 'calm', name: '留白所', note: '安靜、質感', accent: '#607A68' },
-  { id: 'compact', name: '店家名片', note: '精簡、資訊優先', accent: '#315D68' },
-  { id: 'mosaic', name: '照片誌', note: '拼貼、影像主導', accent: '#8A4D76' },
+  { id: 'editorial', name: '日常誌', note: '刊物編排・故事感', accent: '#B85D3F' },
+  { id: 'vivid', name: '招牌感', note: '海報撞色・強識別', accent: '#E65463' },
+  { id: 'calm', name: '留白所', note: '藝廊留白・安靜質感', accent: '#607A68' },
+  { id: 'compact', name: '店家名片', note: '識別卡片・資訊優先', accent: '#315D68' },
+  { id: 'mosaic', name: '照片誌', note: '手作拼貼・影像主導', accent: '#8A4D76' },
 ]
 
 const importSteps = ['確認商家網址', '整理照片與評論', '生成網站文案', '準備三種版型']
@@ -261,6 +261,7 @@ function ReviewEditor({ draft, update }: { draft: BusinessDraft; update: (patch:
 }
 
 function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
+  const previewPhoto = draft.photos.find((photo) => photo.selected) ?? draft.photos[0]
   return (
     <div className="template-switcher" aria-label="網站版型">
       {templates.map((template) => (
@@ -272,6 +273,7 @@ function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (pa
           aria-pressed={draft.template === template.id}
         >
           <span className={`template-thumb is-${template.id}`} style={{ '--template-accent': template.accent } as React.CSSProperties}>
+            {previewPhoto && <img src={previewPhoto.url} alt="" aria-hidden="true" />}
             <i /><i /><i />
           </span>
           <div><strong>{template.name}</strong><small>{template.note}</small></div>
