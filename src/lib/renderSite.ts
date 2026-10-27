@@ -20,6 +20,7 @@ function escapeHtml(value: string): string {
 }
 
 function safeUrl(value: string, fallback = '#'): string {
+  if (/^\/(?!\/)/.test(value)) return escapeHtml(value)
   try {
     const url = new URL(value)
     return ['http:', 'https:', 'tel:'].includes(url.protocol) ? escapeHtml(url.toString()) : fallback
@@ -241,7 +242,23 @@ function heroSizingStyles(template: TemplateId): string {
   if (template === 'compact') {
     return `.hero-media{min-height:220px}.hero-content{padding:26px}@media(max-width:759px){.hero-media{min-height:120px}.hero-content{padding:18px}}`
   }
-  return `.hero-media{min-height:280px}.hero-content{padding-top:14px;padding-bottom:16px}@media(max-width:759px){.hero-media{min-height:160px}.hero-content{padding-top:0;padding-bottom:12px}}`
+  return `.hero-media{height:380px;min-height:0}.hero-content{padding-top:14px;padding-bottom:16px}@media(max-width:759px){.hero-media{height:240px;min-height:0}.hero-content{padding-top:0;padding-bottom:12px}}`
+}
+
+function campaignImageStyles(template: TemplateId): string {
+  if (template === 'vivid') {
+    return `.hero-media img:first-child{object-position:58% 42%}.hero-media img:nth-child(2){display:block;position:absolute;z-index:3;right:18px;bottom:18px;width:92px;height:116px;border:4px solid #f0c94c;object-fit:cover;object-position:50% 24%;transform:rotate(2deg)}.industry-art{right:124px}@media(max-width:759px){.hero-media img:nth-child(2){display:none}.industry-art{right:18px}}`
+  }
+  if (template === 'calm') {
+    return `.hero-media img:first-child{object-position:56% 42%}.hero-media img:nth-child(2){display:block;position:absolute;z-index:2;left:18px;bottom:18px;width:92px;height:112px;border:6px solid var(--surface);object-fit:cover;object-position:50% 22%;box-shadow:0 12px 28px rgba(36,48,40,.18)}@media(max-width:759px){.hero-media img:nth-child(2){display:none}}`
+  }
+  if (template === 'compact') {
+    return `.hero-media img:first-child{object-position:58% 42%}.hero-media img:nth-child(2){display:block;position:absolute;z-index:2;left:-42px;bottom:14px;width:84px;height:106px;border:5px solid var(--surface);object-fit:cover;object-position:50% 22%;box-shadow:0 10px 24px rgba(23,54,61,.2)}@media(max-width:759px){.hero-media img:nth-child(2){display:none}}`
+  }
+  if (template === 'mosaic') {
+    return `.hero-media img:first-child{object-position:58% 42%}.hero-media img:nth-child(2){object-position:50% 22%}`
+  }
+  return `.hero-media img:first-child{object-position:58% 42%}.hero-media img:nth-child(2){display:block;position:absolute;z-index:2;right:max(18px,calc((100% - var(--max))/2));bottom:18px;width:104px;height:130px;border:5px solid var(--surface);object-fit:cover;object-position:50% 22%;transform:rotate(1.5deg);box-shadow:0 10px 28px rgba(47,41,37,.24)}.industry-art{right:max(142px,calc((100% - var(--max))/2 + 124px))}@media(max-width:759px){.hero-media img:nth-child(2){display:none}.industry-art{right:18px}}`
 }
 
 export function renderSite(draft: BusinessDraft): string {
@@ -293,7 +310,7 @@ export function renderSite(draft: BusinessDraft): string {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800;900&family=Noto+Serif+TC:wght@500;600;700;900&display=swap" rel="stylesheet">
   <script type="application/ld+json">${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script>
-  <style>${baseStyles(draft.template, shared.accent)}${variantStyles(draft.template)}${heroSizingStyles(draft.template)}</style>
+  <style>${baseStyles(draft.template, shared.accent)}${variantStyles(draft.template)}${heroSizingStyles(draft.template)}${campaignImageStyles(draft.template)}</style>
 </head>
 <body class="template-${draft.template}">
   <a class="skip" href="#main" target="_self">跳至主要內容</a>

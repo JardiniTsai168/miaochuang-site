@@ -48,4 +48,11 @@ describe('renderSite', () => {
     expect(html).toContain('href="#about" target="_self"')
     expect(html).toContain('target="_blank" rel="noopener noreferrer">查看地圖</a>')
   })
+
+  it('keeps same-origin campaign assets instead of replacing them with broken fallbacks', () => {
+    const draft = createDemoBusiness()
+    const html = renderSite(draft)
+    expect(html).toContain(`src="${draft.photos[0].url}"`)
+    expect(html).not.toContain('<img src="#"')
+  })
 })

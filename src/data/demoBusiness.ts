@@ -1,6 +1,7 @@
 import type { BusinessDraft } from '../types'
 
 const HOUR = 60 * 60 * 1000
+const demoAsset = (filename: string) => `${import.meta.env.BASE_URL}demo/${filename}`
 
 export function createDemoBusiness(now = Date.now()): BusinessDraft {
   return {
@@ -24,14 +25,14 @@ export function createDemoBusiness(now = Date.now()): BusinessDraft {
     photos: [
       {
         id: 'photo-1',
-        url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1600&q=85',
-        alt: '陽光灑進木質調咖啡館',
+        url: demoAsset('cafe-barista-campaign.jpg'),
+        alt: '咖啡師在木質吧台沖煮手沖咖啡',
         selected: true,
       },
       {
         id: 'photo-2',
-        url: 'https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=1200&q=85',
-        alt: '咖啡館吧台與座位',
+        url: demoAsset('cafe-customer-editorial.jpg'),
+        alt: '顧客在雨天窗邊閱讀與喝咖啡',
         selected: true,
       },
       {
