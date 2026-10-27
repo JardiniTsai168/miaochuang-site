@@ -53,7 +53,6 @@ for (const item of cases) {
     await frame.evaluate(async () => {
       const images = [...document.images]
       images.forEach((img) => { img.loading = 'eager' })
-      window.scrollTo(0, document.documentElement.scrollHeight)
       await Promise.all(images.map((img) => img.complete
         ? Promise.resolve()
         : new Promise((resolve) => {
@@ -61,7 +60,6 @@ for (const item of cases) {
             img.addEventListener('error', resolve, { once: true })
             window.setTimeout(resolve, 3_000)
           })))
-      window.scrollTo(0, 0)
     })
   }
   const brokenImages = (await Promise.all(page.frames().map(async (frame) => {
