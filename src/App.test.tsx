@@ -47,4 +47,19 @@ describe('App', () => {
     expect(vivid).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByText('招牌感', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
+
+  it('offers ten imported photos with five selected by default', async () => {
+    const user = userEvent.setup()
+    saveDraft(createDemoBusiness(Date.now(), 0))
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /^照片$/ }))
+
+    const photoButtons = screen.getAllByRole('button').filter((button) => button.querySelector('.photo-picker img'))
+    expect(photoButtons).toHaveLength(10)
+    expect(photoButtons.filter((button) => button.getAttribute('aria-pressed') === 'true')).toHaveLength(5)
+    expect(screen.getByText('已選 5／上限 12')).toBeInTheDocument()
+
+    await user.click(photoButtons[5])
+    expect(screen.getByText('已選 6／上限 12')).toBeInTheDocument()
+  })
 })

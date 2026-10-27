@@ -36,6 +36,8 @@ for (const item of cases) {
     await page.waitForTimeout(500)
   }
   let previewLinkSafe
+  let editorPanelScrolls
+  let availablePhotos
   if (item.name === 'studio-desktop') {
     const preview = page.frameLocator('iframe[title$="網站預覽"]')
     const [popup] = await Promise.all([
@@ -44,6 +46,19 @@ for (const item of cases) {
     ])
     previewLinkSafe = page.url().includes('demo=studio')
     await popup.close()
+
+    const lastTemplate = page.getByRole('button', { name: /照片誌/ })
+    const beforeScroll = await lastTemplate.boundingBox()
+    await page.mouse.move(200, 600)
+    await page.mouse.wheel(0, 900)
+    await page.waitForTimeout(200)
+    const afterScroll = await lastTemplate.boundingBox()
+    editorPanelScrolls = Boolean(beforeScroll && afterScroll && afterScroll.y < beforeScroll.y - 50)
+    await page.locator('.panel-scroll').evaluate((element) => { element.scrollTop = 0 })
+
+    await page.getByRole('button', { name: /^照片$/ }).click()
+    availablePhotos = await page.locator('button[aria-pressed] img').count()
+    await page.getByRole('button', { name: /^版型$/ }).click()
   }
   const dimensions = await page.evaluate(() => ({
     viewport: window.innerWidth,
@@ -70,11 +85,18 @@ for (const item of cases) {
     }
   }))).reduce((total, count) => total + count, 0)
   await page.screenshot({ path: `${outputDir}/${item.name}.png`, fullPage: false })
-  results.push({ ...item, ...dimensions, overflow: dimensions.content > dimensions.viewport, brokenImages, ...(previewLinkSafe === undefined ? {} : { previewLinkSafe }) })
+  results.push({
+    ...item,
+    ...dimensions,
+    overflow: dimensions.content > dimensions.viewport,
+    brokenImages,
+    ...(previewLinkSafe === undefined ? {} : { previewLinkSafe }),
+    ...(editorPanelScrolls === undefined ? {} : { editorPanelScrolls, availablePhotos }),
+  })
   await page.close()
 }
 
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false)) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos < 10))) process.exitCode = 1

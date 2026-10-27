@@ -10,10 +10,13 @@ describe('demo campaign photo packs', () => {
     expect(new Set(signatures).size).toBe(campaignPhotoPackCount)
   })
 
-  it('keeps each generated site on one five-photo campaign pack', () => {
+  it('offers all demo photos while keeping one five-photo campaign pack selected', () => {
     const draft = createDemoBusiness(1_000, 7)
-    expect(draft.photos).toHaveLength(5)
-    expect(draft.photos.every((photo) => photo.selected && photo.url.includes('/demo/generic/'))).toBe(true)
+    expect(draft.photos).toHaveLength(10)
+    expect(draft.photos.filter((photo) => photo.selected)).toHaveLength(5)
+    expect(draft.photos.slice(0, 5).every((photo) => photo.selected)).toBe(true)
+    expect(draft.photos.slice(5).every((photo) => !photo.selected)).toBe(true)
+    expect(draft.photos.every((photo) => photo.url.includes('/demo/generic/'))).toBe(true)
   })
 
   it('wraps explicit pack indexes safely', () => {

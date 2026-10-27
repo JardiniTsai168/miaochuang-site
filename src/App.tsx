@@ -220,11 +220,13 @@ function ContentEditor({ draft, update, onRegenerate }: { draft: BusinessDraft; 
 function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
   const selected = draft.photos.filter((photo) => photo.selected).length
   function toggle(id: string) {
+    const target = draft.photos.find((photo) => photo.id === id)
+    if (!target || (!target.selected && selected >= 12)) return
     update({ photos: draft.photos.map((photo) => photo.id === id ? { ...photo, selected: !photo.selected } : photo) })
   }
   return (
     <div className="editor-section">
-      <div className="editor-heading"><div><p>店家照片</p><h2>選出最能代表你的 12 張照片</h2></div><span className="count-badge">{selected} / 12</span></div>
+      <div className="editor-heading"><div><p>店家照片</p><h2>最多選 12 張最能代表店家的照片</h2></div><span className="count-badge">已選 {selected}／上限 12</span></div>
       <p className="editor-help">第一張選取的照片會成為網站主視覺。點擊照片即可顯示或隱藏。</p>
       <div className="photo-picker">
         {draft.photos.map((photo, index) => (

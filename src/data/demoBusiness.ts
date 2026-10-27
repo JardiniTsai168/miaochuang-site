@@ -27,9 +27,11 @@ export const campaignPhotoPackCount = campaignPhotoPacks.length
 
 export function createCampaignPhotos(photoPackIndex = Math.floor(Math.random() * campaignPhotoPackCount)): BusinessPhoto[] {
   const pack = campaignPhotoPacks[((photoPackIndex % campaignPhotoPackCount) + campaignPhotoPackCount) % campaignPhotoPackCount]
-  return pack.map((photoIndex, index) => {
+  const selectedPhotoIndexes = new Set<number>(pack)
+  const remaining = genericCampaignPhotos.map((_, index) => index).filter((photoIndex) => !selectedPhotoIndexes.has(photoIndex))
+  return [...pack, ...remaining].map((photoIndex, index) => {
     const [filename, alt] = genericCampaignPhotos[photoIndex]
-    return { id: `campaign-photo-${photoIndex}-${index}`, url: demoAsset(filename), alt, selected: true }
+    return { id: `campaign-photo-${photoIndex}`, url: demoAsset(filename), alt, selected: index < pack.length }
   })
 }
 
