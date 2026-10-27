@@ -49,12 +49,34 @@ for (const item of cases) {
     viewport: window.innerWidth,
     content: document.documentElement.scrollWidth,
   }))
+  for (const frame of page.frames()) {
+    await frame.evaluate(async () => {
+      const images = [...document.images]
+      images.forEach((img) => { img.loading = 'eager' })
+      window.scrollTo(0, document.documentElement.scrollHeight)
+      await Promise.all(images.map((img) => img.complete
+        ? Promise.resolve()
+        : new Promise((resolve) => {
+            img.addEventListener('load', resolve, { once: true })
+            img.addEventListener('error', resolve, { once: true })
+            window.setTimeout(resolve, 3_000)
+          })))
+      window.scrollTo(0, 0)
+    })
+  }
+  const brokenImages = (await Promise.all(page.frames().map(async (frame) => {
+    try {
+      return await frame.evaluate(() => [...document.images].filter((img) => !img.complete || img.naturalWidth === 0).length)
+    } catch {
+      return 0
+    }
+  }))).reduce((total, count) => total + count, 0)
   await page.screenshot({ path: `${outputDir}/${item.name}.png`, fullPage: false })
-  results.push({ ...item, ...dimensions, overflow: dimensions.content > dimensions.viewport, ...(previewLinkSafe === undefined ? {} : { previewLinkSafe }) })
+  results.push({ ...item, ...dimensions, overflow: dimensions.content > dimensions.viewport, brokenImages, ...(previewLinkSafe === undefined ? {} : { previewLinkSafe }) })
   await page.close()
 }
 
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.previewLinkSafe === false)) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false)) process.exitCode = 1

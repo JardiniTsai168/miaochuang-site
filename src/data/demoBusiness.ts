@@ -1,9 +1,39 @@
-import type { BusinessDraft } from '../types'
+import type { BusinessDraft, BusinessPhoto } from '../types'
 
 const HOUR = 60 * 60 * 1000
 const demoAsset = (filename: string) => `${import.meta.env.BASE_URL}demo/${filename}`
 
-export function createDemoBusiness(now = Date.now()): BusinessDraft {
+const genericCampaignPhotos = [
+  ['generic/owner-welcome.jpg', '店主在明亮門面迎接來訪顧客'],
+  ['generic/owner-working.jpg', '店主在自然光工作空間整理陳列'],
+  ['generic/customer-consultation.jpg', '店主與顧客在櫃台親切討論需求'],
+  ['generic/hands-packaging.jpg', '店主用心完成包裝與服務細節'],
+  ['generic/interior-daylight.jpg', '採光明亮且溫暖舒適的店內空間'],
+  ['generic/storefront-dusk.jpg', '夜晚亮起暖光的街邊店面'],
+  ['generic/team-portrait.jpg', '一起經營店家的專業團隊'],
+  ['generic/customer-browse.jpg', '顧客在店內自在瀏覽與體驗'],
+  ['generic/owner-tablet.jpg', '店主在營業前確認當日服務內容'],
+  ['generic/customer-lounge.jpg', '顧客在舒適空間中放鬆停留'],
+] as const
+
+const campaignPhotoPacks = [
+  [0, 7, 3, 4, 5], [1, 8, 2, 4, 6], [2, 9, 3, 5, 4], [3, 0, 7, 6, 4],
+  [4, 8, 2, 3, 5], [5, 6, 9, 3, 4], [6, 0, 8, 4, 5], [0, 2, 9, 3, 6],
+  [1, 7, 3, 5, 4], [2, 8, 6, 4, 3], [3, 9, 0, 5, 4], [4, 7, 1, 3, 6],
+  [5, 8, 2, 6, 3], [6, 9, 1, 4, 5], [0, 8, 6, 3, 7], [1, 9, 2, 5, 3],
+] as const
+
+export const campaignPhotoPackCount = campaignPhotoPacks.length
+
+export function createCampaignPhotos(photoPackIndex = Math.floor(Math.random() * campaignPhotoPackCount)): BusinessPhoto[] {
+  const pack = campaignPhotoPacks[((photoPackIndex % campaignPhotoPackCount) + campaignPhotoPackCount) % campaignPhotoPackCount]
+  return pack.map((photoIndex, index) => {
+    const [filename, alt] = genericCampaignPhotos[photoIndex]
+    return { id: `campaign-photo-${photoIndex}-${index}`, url: demoAsset(filename), alt, selected: true }
+  })
+}
+
+export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): BusinessDraft {
   return {
     sourceUrl: 'https://maps.app.goo.gl/demo-lihi-cafe',
     name: '日光散步珈琲',
@@ -22,44 +52,7 @@ export function createDemoBusiness(now = Date.now()): BusinessDraft {
       { label: '週一至週五', value: '11:00–20:00' },
       { label: '週六、週日', value: '10:00–21:00' },
     ],
-    photos: [
-      {
-        id: 'photo-1',
-        url: demoAsset('cafe-barista-campaign.jpg'),
-        alt: '咖啡師在木質吧台沖煮手沖咖啡',
-        selected: true,
-      },
-      {
-        id: 'photo-2',
-        url: demoAsset('cafe-customer-editorial.jpg'),
-        alt: '顧客在雨天窗邊閱讀與喝咖啡',
-        selected: true,
-      },
-      {
-        id: 'photo-3',
-        url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=85',
-        alt: '手沖咖啡',
-        selected: true,
-      },
-      {
-        id: 'photo-4',
-        url: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=1200&q=85',
-        alt: '每日手作甜點',
-        selected: true,
-      },
-      {
-        id: 'photo-5',
-        url: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=1200&q=85',
-        alt: '咖啡館窗邊座位',
-        selected: true,
-      },
-      {
-        id: 'photo-6',
-        url: 'https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=1200&q=85',
-        alt: '拿鐵與咖啡豆',
-        selected: false,
-      },
-    ],
+    photos: createCampaignPhotos(photoPackIndex),
     reviews: [
       {
         id: 'review-1',
