@@ -263,7 +263,8 @@ function ReviewEditor({ draft, update }: { draft: BusinessDraft; update: (patch:
 }
 
 function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
-  const previewPhoto = draft.photos.find((photo) => photo.selected) ?? draft.photos[0]
+  const previewPhotos = draft.photos.filter((photo) => photo.selected).slice(0, 3)
+  if (previewPhotos.length === 0 && draft.photos[0]) previewPhotos.push(draft.photos[0])
   return (
     <div className="template-switcher" aria-label="網站版型">
       {templates.map((template) => (
@@ -275,7 +276,7 @@ function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (pa
           aria-pressed={draft.template === template.id}
         >
           <span className={`template-thumb is-${template.id}`} style={{ '--template-accent': template.accent } as React.CSSProperties}>
-            {previewPhoto && <img src={previewPhoto.url} alt="" aria-hidden="true" />}
+            {previewPhotos.map((photo, index) => <img key={photo.id} className={`thumb-photo-${index + 1}`} src={photo.url} alt="" aria-hidden="true" />)}
             <i /><i /><i />
           </span>
           <div><strong>{template.name}</strong><small>{template.note}</small></div>
