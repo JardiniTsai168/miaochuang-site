@@ -25,8 +25,21 @@ describe('renderSite', () => {
     expect(html).toContain('--accent:')
     expect(html).toContain('Powered by lihiDomain')
     expect(html).toContain('class="industry-art"')
-    expect(html).toContain('class="identity-strip"')
     expect(html).toContain('class="hero-index"')
+    expect(html).toContain(`data-layout="${template}"`)
+  })
+
+  it('uses different content structures instead of only changing photos or colors', () => {
+    const draft = createDemoBusiness()
+    const editorial = renderSite({ ...draft, template: 'editorial' })
+    const vivid = renderSite({ ...draft, template: 'vivid' })
+    const compact = renderSite({ ...draft, template: 'compact' })
+    const mosaic = renderSite({ ...draft, template: 'mosaic' })
+
+    expect(editorial.indexOf('id="gallery"')).toBeLessThan(editorial.indexOf('id="about"'))
+    expect(vivid.indexOf('id="services"')).toBeLessThan(vivid.indexOf('id="about"'))
+    expect(compact.indexOf('id="contact"')).toBeLessThan(compact.indexOf('id="services"'))
+    expect(mosaic.indexOf('id="gallery"')).toBeLessThan(mosaic.indexOf('id="reviews"'))
   })
 
   it('adds an industry-specific illustration from the business category', () => {

@@ -40,12 +40,12 @@ describe('App', () => {
     saveDraft(createDemoBusiness())
     render(<App />)
     expect(screen.getByRole('heading', { name: /先挑一個最像你店裡的版型/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /店家名片/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /照片誌/ })).toBeInTheDocument()
-    const vivid = screen.getByRole('button', { name: /招牌感/ })
+    expect(screen.getByRole('button', { name: /手作菜單/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /影像拼貼/ })).toBeInTheDocument()
+    const vivid = screen.getByRole('button', { name: /醒目海報/ })
     await user.click(vivid)
     expect(vivid).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('招牌感', { selector: '.template-detail strong' })).toBeInTheDocument()
+    expect(screen.getByText('醒目海報', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
   it('offers ten imported photos with five selected by default', async () => {

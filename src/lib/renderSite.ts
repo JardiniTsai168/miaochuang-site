@@ -1,11 +1,11 @@
 import type { BusinessDraft, TemplateId } from '../types'
 
 const templateNames: Record<TemplateId, string> = {
-  editorial: '日常誌',
-  vivid: '招牌感',
-  calm: '留白所',
-  compact: '店家名片',
-  mosaic: '照片誌',
+  editorial: '編輯誌',
+  vivid: '醒目海報',
+  calm: '靜謐藝廊',
+  compact: '手作菜單',
+  mosaic: '影像拼貼',
 }
 
 export { templateNames }
@@ -261,6 +261,61 @@ function campaignImageStyles(template: TemplateId): string {
   return `.hero-media img:first-child{object-position:58% 42%}.hero-media img:nth-child(2){display:block;position:absolute;z-index:2;right:max(18px,calc((100% - var(--max))/2));bottom:18px;width:104px;height:130px;border:5px solid var(--surface);object-fit:cover;object-position:50% 22%;transform:rotate(1.5deg);box-shadow:0 10px 28px rgba(47,41,37,.24)}.industry-art{right:max(142px,calc((100% - var(--max))/2 + 124px))}@media(max-width:759px){.hero-media img:nth-child(2){display:none}.industry-art{right:18px}}`
 }
 
+function professionalTemplateStyles(template: TemplateId): string {
+  const shared = `
+    .hero h1{font-size:clamp(40px,4.4vw,64px)}
+    .template-intro{width:min(calc(100% - 32px),var(--max));margin:0 auto;padding:18px 0;border-bottom:1px solid var(--line);font-size:.66rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+    @media(max-width:759px){.hero h1{font-size:clamp(32px,10vw,44px)}.template-intro{font-size:.58rem}}
+  `
+
+  if (template === 'editorial') {
+    return `${shared}
+      .site-nav{position:relative;color:var(--ink)}
+      .hero{min-height:320px;width:min(calc(100% - 32px),var(--max));margin:0 auto 24px;display:block;overflow:visible;background:transparent}
+      .hero-media{position:relative;width:72%;height:286px;margin-left:auto;overflow:hidden}
+      .hero-media:after{background:linear-gradient(90deg,rgba(28,23,20,.12),rgba(28,23,20,0) 55%)}
+      .hero-content{position:absolute;left:0;bottom:22px;width:48%;padding:26px 30px;background:var(--surface);color:var(--ink);border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+      .hero h1{max-width:10ch;line-height:1.08}
+      .hero .tagline{margin-top:10px;font-size:1rem}.hero-actions{margin-top:14px}.button{min-height:42px;border-color:var(--ink)}
+      .hero-index{left:0;top:0;color:var(--accent);font-size:3.2rem}.industry-art{right:12px;bottom:12px}
+      .template-intro{display:flex;justify-content:space-between}.template-intro:after{content:"VOL. 01 / TAIWAN"}
+      .section-heading h2{font-weight:500}.gallery{padding-top:46px}.gallery-grid figure:nth-child(1){grid-column:span 8}.gallery-grid figure:nth-child(2){grid-column:9/span 4;margin-top:72px}
+      @media(max-width:759px){.hero{min-height:420px}.hero-media{width:100%;height:248px}.hero-content{left:12px;right:12px;bottom:0;width:auto;padding:18px}.hero h1{max-width:12ch}.hero-index,.industry-art{display:none}.template-intro:after{content:"VOL. 01"}}
+    `
+  }
+  if (template === 'vivid') {
+    return `${shared}
+      .hero{min-height:320px}.hero-media{left:46%;clip-path:polygon(12% 0,100% 0,100% 100%,0 100%)}.hero-content{width:min(calc(100% - 32px),var(--max));padding:52px 0 20px}
+      .hero h1{max-width:9ch;white-space:normal;text-transform:uppercase;line-height:.92}.hero .tagline{max-width:22ch}
+      .template-intro{width:100%;max-width:none;padding:12px max(16px,calc((100% - var(--max))/2));background:#f0c94c;color:#172147;border:0;white-space:nowrap;overflow:hidden}.template-intro:after{content:" ✦ OPEN TODAY ✦ GOOD THINGS HAPPEN HERE ✦"}
+      .services{padding-top:52px}.services .service-list article{min-height:120px}.about{border-top:10px solid var(--accent)}
+      @media(max-width:759px){.hero{min-height:390px}.hero-content{padding:64px 0 28px}.hero h1{max-width:8ch;white-space:normal}.template-intro{font-size:.6rem}}
+    `
+  }
+  if (template === 'calm') {
+    return `${shared}
+      .hero{min-height:320px;grid-template-columns:.72fr 1.28fr;padding-top:8px;padding-bottom:20px}.hero-media{min-height:292px}.hero-content{padding:42px 0 24px}.hero h1{max-width:7ch;font-weight:500}.hero .tagline{max-width:20ch}
+      .template-intro{width:min(calc(100% - 32px),var(--max));display:grid;grid-template-columns:180px 1fr;color:var(--muted)}.template-intro:after{content:"QUIET SPACE · HONEST CRAFT · LOCAL STORY"}
+      .about{padding-top:56px}.about .section-heading{margin-bottom:64px}.gallery-grid img{filter:saturate(.72)}
+      @media(max-width:759px){.hero{min-height:auto;grid-template-columns:1fr}.hero-media{min-height:208px}.hero h1{max-width:12ch}.template-intro{grid-template-columns:1fr;gap:4px}.template-intro:after{content:"QUIET SPACE · LOCAL STORY"}}
+    `
+  }
+  if (template === 'compact') {
+    return `${shared}
+      .hero{min-height:306px;grid-template-columns:1.38fr .62fr;margin-top:18px;box-shadow:8px 8px 0 var(--accent)}.hero-media{min-height:304px}.hero-content{padding:34px}.hero h1{max-width:9ch;line-height:1}.hero .tagline{max-width:24ch;font-size:1rem}
+      .template-intro{display:grid;grid-template-columns:repeat(3,1fr);padding:0;border:1px solid var(--ink);border-top:0}.template-intro span{padding:12px 14px;border-right:1px solid var(--ink)}.template-intro span:last-child{border-right:0}.template-intro span:nth-child(2):after{content:"TODAY'S SELECTION"}.template-intro span:nth-child(3):after{content:"WALK-INS WELCOME"}
+      .contact.visit-first{padding-top:44px;padding-bottom:44px}.contact.visit-first .section-heading{margin-bottom:24px}.services{padding-top:48px}.service-list h3{font-family:var(--sans);font-weight:800}
+      @media(max-width:759px){.hero{grid-template-columns:1fr;min-height:auto}.hero-media{min-height:158px}.hero-content{padding:22px}.hero h1{max-width:12ch}.template-intro{grid-template-columns:1fr}.template-intro span{border-right:0;border-bottom:1px solid var(--ink)}.template-intro span:last-child{border-bottom:0}}
+    `
+  }
+  return `${shared}
+    .hero{min-height:420px;grid-template-columns:.62fr 1.38fr}.hero-media{height:400px}.hero-content{align-self:center;padding:20px 12px 20px 0}.hero h1{max-width:7ch;line-height:1.05}.hero .tagline{max-width:20ch}
+    .template-intro{border:0;text-align:center}.template-intro:before{content:"01";display:inline-grid;place-items:center;width:34px;height:34px;margin-right:12px;border-radius:50%;background:var(--accent);color:#fff}.template-intro:after{content:"STORIES / PEOPLE / PLACE"}
+    .gallery{padding-top:34px}.gallery .section-heading{display:none}.gallery-grid{grid-template-columns:repeat(12,1fr);align-items:start}.gallery-grid figure:nth-child(1){grid-column:1/span 7}.gallery-grid figure:nth-child(2){grid-column:8/span 5;margin-top:54px}.gallery-grid figure:nth-child(3){grid-column:2/span 4}.gallery-grid figure:nth-child(4){grid-column:6/span 7;margin-top:-24px}
+    @media(max-width:759px){.hero{min-height:auto;grid-template-columns:1fr}.hero-media{height:258px}.hero-content{padding:8px 0 20px}.hero h1{max-width:11ch}.template-intro{display:flex;align-items:center;justify-content:center}.gallery-grid figure:nth-child(n){grid-column:span 12;margin-top:0}}
+  `
+}
+
 export function renderSite(draft: BusinessDraft): string {
   const shared = sharedSections(draft)
   const title = `${escapeHtml(draft.name)}｜${escapeHtml(draft.category)}`
@@ -283,6 +338,25 @@ export function renderSite(draft: BusinessDraft): string {
   ]
     .filter(Boolean)
     .join('')
+
+  const heroHtml = `<header class="hero">
+      <div class="hero-media">${heroPhotos.map((photo) => `<img src="${safeUrl(photo!.url)}" alt="${escapeHtml(photo!.alt)}">`).join('')}</div>
+      <div class="industry-art" data-industry="${identity.id}" aria-hidden="true"><span>${identity.icon}</span><p><strong>${identity.label}</strong><small>${identity.detail}</small></p></div>
+      <span class="hero-index" aria-hidden="true">01</span>
+      <div class="hero-content"><p class="kicker">${escapeHtml(draft.category)}</p><h1 style="--title-size:${vividTitleSize}px">${escapeHtml(draft.name)}</h1><p class="tagline">${escapeHtml(draft.tagline)}</p><div class="hero-actions">${draft.googleMapsUrl ? `<a class="button primary" href="${safeUrl(draft.googleMapsUrl)}" target="_blank" rel="noopener noreferrer">查看地圖</a>` : ''}${draft.phone ? `<a class="button" href="${phoneUrl(draft.phone)}">電話聯絡</a>` : ''}</div></div>
+    </header>`
+  const identityHtml = `<aside class="identity-strip" aria-label="店家產業與特色"><span class="identity-icon" aria-hidden="true">${identity.icon}</span><div class="identity-label"><span>${identity.label}</span><strong>${escapeHtml(draft.category)}</strong></div>${identityServices ? `<div class="identity-services">${identityServices}</div>` : ''}</aside>`
+  const introHtml = `<div class="template-intro" aria-hidden="true"><span>${templateNames[draft.template]} / ${escapeHtml(draft.category)}</span><span></span><span></span></div>`
+  const aboutHtml = `<section class="section about" id="about"><div class="section-heading"><p>ABOUT US</p><h2>一間店，也是一種生活的提案</h2></div><div class="about-grid"><p class="about-copy">${escapeHtml(draft.description)}</p><ul class="facts">${facts}</ul></div></section>`
+  const contactHtml = `<section class="section contact${draft.template === 'compact' ? ' visit-first' : ''}" id="contact"><div class="section-heading"><p>VISIT & CONTACT</p><h2>期待與你見面</h2></div><div class="contact-grid"><div><p class="map-address">${escapeHtml(draft.address)}</p>${draft.googleMapsUrl ? `<a href="${safeUrl(draft.googleMapsUrl)}" target="_blank" rel="noopener noreferrer">在 Google 地圖開啟 ↗</a>` : ''}</div><div class="contact-links">${shared.contactLinks}</div></div></section>`
+  const templateLayouts: Record<TemplateId, string[]> = {
+    editorial: [heroHtml, introHtml, identityHtml, shared.galleryHtml, aboutHtml, shared.serviceHtml, shared.reviewHtml, shared.videoHtml, contactHtml],
+    vivid: [heroHtml, introHtml, shared.serviceHtml, identityHtml, shared.galleryHtml, aboutHtml, shared.videoHtml, shared.reviewHtml, contactHtml],
+    calm: [heroHtml, introHtml, aboutHtml, shared.galleryHtml, shared.serviceHtml, shared.reviewHtml, contactHtml, shared.videoHtml],
+    compact: [heroHtml, introHtml, contactHtml, shared.serviceHtml, aboutHtml, shared.reviewHtml, shared.galleryHtml, shared.videoHtml],
+    mosaic: [heroHtml, introHtml, shared.galleryHtml, aboutHtml, shared.reviewHtml, shared.serviceHtml, shared.videoHtml, contactHtml],
+  }
+  const pageContent = templateLayouts[draft.template].filter(Boolean).join('')
 
   const schema = {
     '@context': 'https://schema.org',
@@ -310,25 +384,13 @@ export function renderSite(draft: BusinessDraft): string {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800;900&family=Noto+Serif+TC:wght@500;600;700;900&display=swap" rel="stylesheet">
   <script type="application/ld+json">${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script>
-  <style>${baseStyles(draft.template, shared.accent)}${variantStyles(draft.template)}${heroSizingStyles(draft.template)}${campaignImageStyles(draft.template)}</style>
+  <style>${baseStyles(draft.template, shared.accent)}${variantStyles(draft.template)}${heroSizingStyles(draft.template)}${campaignImageStyles(draft.template)}${professionalTemplateStyles(draft.template)}</style>
 </head>
-<body class="template-${draft.template}">
+<body class="template-${draft.template}" data-layout="${draft.template}">
   <a class="skip" href="#main" target="_self">跳至主要內容</a>
   <nav class="site-nav" aria-label="主要導覽"><strong>${escapeHtml(draft.name)}</strong><div><a href="#about" target="_self">關於我們</a>${shared.services.length ? '<a href="#services" target="_self">服務項目</a>' : ''}${shared.gallery.length ? '<a href="#gallery" target="_self">店家照片</a>' : ''}<a href="#contact" target="_self">聯絡資訊</a></div></nav>
   <main id="main">
-    <header class="hero">
-      <div class="hero-media">${heroPhotos.map((photo) => `<img src="${safeUrl(photo!.url)}" alt="${escapeHtml(photo!.alt)}">`).join('')}</div>
-      <div class="industry-art" data-industry="${identity.id}" aria-hidden="true"><span>${identity.icon}</span><p><strong>${identity.label}</strong><small>${identity.detail}</small></p></div>
-      <span class="hero-index" aria-hidden="true">01</span>
-      <div class="hero-content"><p class="kicker">${escapeHtml(draft.category)}</p><h1 style="--title-size:${vividTitleSize}px">${escapeHtml(draft.name)}</h1><p class="tagline">${escapeHtml(draft.tagline)}</p><div class="hero-actions">${draft.googleMapsUrl ? `<a class="button primary" href="${safeUrl(draft.googleMapsUrl)}" target="_blank" rel="noopener noreferrer">查看地圖</a>` : ''}${draft.phone ? `<a class="button" href="${phoneUrl(draft.phone)}">電話聯絡</a>` : ''}</div></div>
-    </header>
-    <aside class="identity-strip" aria-label="店家產業與特色"><span class="identity-icon" aria-hidden="true">${identity.icon}</span><div class="identity-label"><span>${identity.label}</span><strong>${escapeHtml(draft.category)}</strong></div>${identityServices ? `<div class="identity-services">${identityServices}</div>` : ''}</aside>
-    <section class="section about" id="about"><div class="section-heading"><p>ABOUT US</p><h2>一間店，也是一種生活的提案</h2></div><div class="about-grid"><p class="about-copy">${escapeHtml(draft.description)}</p><ul class="facts">${facts}</ul></div></section>
-    ${shared.serviceHtml}
-    ${shared.galleryHtml}
-    ${shared.videoHtml}
-    ${shared.reviewHtml}
-    <section class="section contact" id="contact"><div class="section-heading"><p>VISIT & CONTACT</p><h2>期待與你見面</h2></div><div class="contact-grid"><div><p class="map-address">${escapeHtml(draft.address)}</p>${draft.googleMapsUrl ? `<a href="${safeUrl(draft.googleMapsUrl)}" target="_blank" rel="noopener noreferrer">在 Google 地圖開啟 ↗</a>` : ''}</div><div class="contact-links">${shared.contactLinks}</div></div></section>
+    ${pageContent}
   </main>
   <footer class="site-footer"><span>© ${new Date().getFullYear()} ${escapeHtml(draft.name)}</span><a class="powered" href="https://lihidomain.com/" target="_blank" rel="noopener noreferrer">Powered by lihiDomain</a></footer>
 </body>
