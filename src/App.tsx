@@ -65,9 +65,9 @@ function Header({ onReset, studio = false }: { onReset?: () => void; studio?: bo
   )
 }
 
-function Landing({ onImport }: { onImport: (url: string) => void }) {
+function Landing({ onImport, initialError = '' }: { onImport: (url: string) => void; initialError?: string }) {
   const [url, setUrl] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(initialError)
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -228,13 +228,17 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
     <div className="editor-section">
       <div className="editor-heading"><div><p>店家照片</p><h2>最多選 12 張最能代表店家的照片</h2></div><span className="count-badge">已選 {selected}／上限 12</span></div>
       <p className="editor-help">第一張選取的照片會成為網站主視覺。點擊照片即可顯示或隱藏。</p>
+      {draft.source === 'google_places' && <p className="google-source-note">即時取自 Google Maps，不會儲存在秒創網站。照片作者與原始來源會保留。</p>}
       <div className="photo-picker">
         {draft.photos.map((photo, index) => (
-          <button key={photo.id} className={photo.selected ? 'selected' : ''} type="button" onClick={() => toggle(photo.id)} aria-pressed={photo.selected}>
-            <img src={photo.url} alt={photo.alt} />
-            <span>{photo.selected ? <Check size={14} /> : index + 1}</span>
-            {photo.selected && index === draft.photos.findIndex((item) => item.selected) && <em>主視覺</em>}
-          </button>
+          <article key={photo.id}>
+            <button className={photo.selected ? 'selected' : ''} type="button" onClick={() => toggle(photo.id)} aria-pressed={photo.selected}>
+              <img src={photo.url} alt={photo.alt} />
+              <span>{photo.selected ? <Check size={14} /> : index + 1}</span>
+              {photo.selected && index === draft.photos.findIndex((item) => item.selected) && <em>主視覺</em>}
+            </button>
+            {photo.sourceUrl && <div className="source-links"><a href={photo.authorUrl || photo.sourceUrl} target="_blank" rel="noreferrer">{photo.authorName || 'Google Maps'}</a><a href={photo.sourceUrl} target="_blank" rel="noreferrer">原始照片 ↗</a>{photo.reportUrl && <a href={photo.reportUrl} target="_blank" rel="noreferrer">回報</a>}</div>}
+          </article>
         ))}
       </div>
       <div className="upload-placeholder"><ImageIcon size={21} aria-hidden="true" /><div><strong>自行上傳照片</strong><span>正式串接儲存空間後開放；目前先使用商家來源照片。</span></div></div>
@@ -250,12 +254,16 @@ function ReviewEditor({ draft, update }: { draft: BusinessDraft; update: (patch:
     <div className="editor-section">
       <div className="editor-heading"><div><p>Google 評論</p><h2>挑選要放上網站的真實評價</h2></div><span className="source-badge">保留原文</span></div>
       <p className="editor-help">評論內容不能修改，只能選擇顯示或隱藏。網站會保留 Google 來源標示。</p>
+      {draft.source === 'google_places' && <p className="google-source-note">Google 評論依 Places API 預設的相關性排序顯示；作者與原始評論連結會保留。</p>}
       <div className="review-picker">
         {draft.reviews.map((review) => (
-          <button key={review.id} className={review.selected ? 'selected' : ''} type="button" onClick={() => toggle(review.id)} aria-pressed={review.selected}>
-            <span className="check-box">{review.selected && <Check size={14} />}</span>
-            <div><div className="review-meta"><strong>{review.author}</strong><span>{'★'.repeat(review.rating)}</span></div><p>{review.text}</p><small>{review.relativeTime}・Google 評論</small></div>
-          </button>
+          <article key={review.id}>
+            <button className={review.selected ? 'selected' : ''} type="button" onClick={() => toggle(review.id)} aria-pressed={review.selected}>
+              <span className="check-box">{review.selected && <Check size={14} />}</span>
+              <div><div className="review-meta"><strong>{review.author}</strong><span>{'★'.repeat(review.rating)}</span></div><p>{review.text}</p><small>{review.relativeTime}・Google 評論</small></div>
+            </button>
+            {review.sourceUrl && <div className="source-links"><a href={review.authorUrl || review.sourceUrl} target="_blank" rel="noreferrer">作者</a><a href={review.sourceUrl} target="_blank" rel="noreferrer">原始評論 ↗</a>{review.reportUrl && <a href={review.reportUrl} target="_blank" rel="noreferrer">回報</a>}</div>}
+          </article>
         ))}
       </div>
     </div>
@@ -323,8 +331,8 @@ function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDr
     <div className="studio-page">
       <Header studio onReset={onReset} />
       <div className="studio-status">
-        <div><span className="status-dot" /> 草稿自動儲存</div>
-        <span>{mode === 'demo' ? '目前使用示範資料' : 'Google 商家資料已匯入'}</span>
+        <div><span className="status-dot" /> {mode === 'demo' ? '草稿自動儲存' : '本次工作階段暫存'}</div>
+        <span>{mode === 'demo' ? '目前使用示範資料' : 'Google 商家資料即時載入・重新整理需再次匯入'}</span>
         <span>預覽剩餘 {formatRemainingTime(draft.expiresAt)}</span>
       </div>
       <div className="mobile-studio-switch" aria-label="工作區顯示">
@@ -399,12 +407,15 @@ export default function App() {
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'live'>('demo')
   const [importStep, setImportStep] = useState(0)
+  const [importError, setImportError] = useState('')
 
   useEffect(() => {
-    if (draft) saveDraft(draft)
+    if (draft?.source === 'google_places') clearDraft()
+    else if (draft) saveDraft(draft)
   }, [draft])
 
   async function startImport(sourceUrl: string) {
+    setImportError('')
     setStage('importing')
     setImportStep(0)
     const timer = window.setInterval(() => setImportStep((current) => Math.min(current + 1, importSteps.length - 1)), 520)
@@ -414,6 +425,10 @@ export default function App() {
       setDraft(result.draft)
       setMode(result.mode)
       setStage('studio')
+    } catch (error) {
+      setDraft(null)
+      setImportError(error instanceof Error ? error.message : '匯入商家資料時發生錯誤，請稍後再試。')
+      setStage('landing')
     } finally {
       window.clearInterval(timer)
     }
@@ -422,11 +437,12 @@ export default function App() {
   function reset() {
     clearDraft()
     setDraft(null)
+    setImportError('')
     setStage('landing')
   }
 
   if (stage === 'importing') return <Importing activeStep={importStep} />
   if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReady={() => setStage('ready')} onReset={reset} />
   if (stage === 'ready' && draft) return <Ready draft={draft} onBack={() => setStage('studio')} onReset={reset} />
-  return <Landing onImport={startImport} />
+  return <Landing onImport={startImport} initialError={importError} />
 }

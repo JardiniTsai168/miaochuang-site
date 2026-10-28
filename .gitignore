@@ -3,6 +3,8 @@ dist/
 .DS_Store
 coverage/
 *.log
+.dev.vars
+.dev.vars.*
 
 # OpenClaw agent workspace files — never publish to the product repository.
 .bootstrap-defaults/

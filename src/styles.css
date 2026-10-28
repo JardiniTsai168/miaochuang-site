@@ -170,7 +170,10 @@ img { max-width: 100%; }
 .regenerate-row .secondary-button { min-height: 42px; padding-inline: 13px; }
 .regenerate-row span { color: var(--muted); font-size: .67rem; }
 .editor-help { margin: -8px 0 20px; color: var(--muted); font-size: .78rem; line-height: 1.65; }
+.google-source-note { margin: -8px 0 16px; padding: 10px 12px; border-left: 3px solid var(--pink-deep); background: var(--pink-pale); color: var(--navy); font-size: .68rem; line-height: 1.6; }
 .photo-picker { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.photo-picker article { min-width: 0; }
+.photo-picker article > button { width: 100%; }
 .photo-picker button { position: relative; min-width: 0; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: 10px; background: #eee; }
 .photo-picker button.selected { border-color: var(--pink-deep); }
 .photo-picker img { width: 100%; aspect-ratio: 4 / 3; display: block; object-fit: cover; }
@@ -182,6 +185,7 @@ img { max-width: 100%; }
 .upload-placeholder strong { color: var(--navy); font-size: .78rem; }
 .upload-placeholder span { font-size: .66rem; line-height: 1.5; }
 .review-picker { display: grid; gap: 10px; }
+.review-picker article { min-width: 0; }
 .review-picker button { width: 100%; padding: 14px; display: grid; grid-template-columns: 24px 1fr; gap: 10px; text-align: left; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); }
 .review-picker button.selected { border-color: color-mix(in srgb, var(--pink) 52%, var(--line)); background: var(--pink-pale); }
 .check-box { width: 21px; height: 21px; display: grid; place-items: center; border: 1px solid #c7bdc5; border-radius: 5px; }
@@ -191,6 +195,8 @@ img { max-width: 100%; }
 .review-meta span { color: #b56d00; font-size: .7rem; letter-spacing: .03em; }
 .review-picker p { margin: 8px 0; font-size: .76rem; line-height: 1.65; }
 .review-picker small { color: var(--muted); font-size: .62rem; }
+.source-links { padding: 6px 2px 0; display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: .61rem; }
+.source-links a { color: inherit; text-underline-offset: 2px; }
 
 .preview-workspace { min-width: 0; padding: 16px 12px 118px; background: #eee8ed; }
 .preview-toolbar { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }

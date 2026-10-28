@@ -10,7 +10,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "visual-check": "node scripts/visual-check.mjs",
-    "check": "npm run test && npm run build"
+    "worker:typecheck": "tsc -p worker/tsconfig.json",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy",
+    "check": "npm run test && npm run worker:typecheck && npm run build"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -20,6 +23,7 @@
     "vite": "latest"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261028.1",
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
     "@testing-library/user-event": "latest",
@@ -29,6 +33,7 @@
     "jsdom": "latest",
     "playwright-core": "latest",
     "typescript": "latest",
-    "vitest": "latest"
+    "vitest": "latest",
+    "wrangler": "^4.154.0"
   }
 }

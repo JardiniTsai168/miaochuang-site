@@ -29,7 +29,11 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npm test
+      - name: Check Worker types
+        run: npm run worker:typecheck
       - name: Build
+        env:
+          VITE_IMPORT_API_BASE_URL: ${{ vars.VITE_IMPORT_API_BASE_URL }}
         run: npm run build
       - name: Configure Pages
         uses: actions/configure-pages@v5

@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "miaochuang-import",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-29",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://jardinitsai168.github.io"
+  }
+}

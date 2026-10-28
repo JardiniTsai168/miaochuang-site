@@ -1,6 +1,8 @@
 import { createDemoBusiness } from '../data/demoBusiness'
 import type { ImportResult } from '../types'
 
+const IMPORT_API_BASE_URL = (import.meta.env.VITE_IMPORT_API_BASE_URL || '').replace(/\/$/u, '')
+
 const GOOGLE_HOSTS = new Set([
   'google.com',
   'www.google.com',
@@ -18,29 +20,33 @@ export function isGoogleBusinessUrl(value: string): boolean {
   }
 }
 
+export class ImportBusinessError extends Error {
+  constructor(message: string, public code = 'IMPORT_FAILED') {
+    super(message)
+  }
+}
+
 export async function importBusiness(sourceUrl: string): Promise<ImportResult> {
   if (!isGoogleBusinessUrl(sourceUrl)) {
     throw new Error('請貼上完整的 Google 地圖商家網址，例如 https://maps.app.goo.gl/...')
   }
 
-  const response = await fetch('/api/import-place', {
+  const demo = createDemoBusiness()
+  if (sourceUrl === demo.sourceUrl) return { draft: demo, mode: 'demo' }
+
+  const response = await fetch(`${IMPORT_API_BASE_URL}/api/import-place`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sourceUrl }),
   }).catch(() => null)
 
-  if (response?.ok && response.headers.get('content-type')?.includes('application/json')) {
-    try {
-      return (await response.json()) as ImportResult
-    } catch {
-      // Fall through to the explicit demo mode while the backend is not connected.
-    }
+  if (!response) {
+    throw new ImportBusinessError('目前無法連線到 Google 商家匯入服務，請稍後再試。', 'IMPORT_SERVICE_UNAVAILABLE')
   }
-
-  // The UI remains fully testable before the Google Places credential is connected.
-  await new Promise((resolve) => window.setTimeout(resolve, 900))
-  return {
-    draft: { ...createDemoBusiness(), sourceUrl },
-    mode: 'demo',
+  const body = await response.json().catch(() => null) as (ImportResult & { error?: { code?: string; message?: string } }) | null
+  if (!response.ok) {
+    throw new ImportBusinessError(body?.error?.message || 'Google 商家資料匯入失敗，請確認網址後再試。', body?.error?.code)
   }
+  if (!body?.draft || body.mode !== 'live') throw new ImportBusinessError('匯入服務回傳的資料格式不正確。', 'INVALID_IMPORT_RESPONSE')
+  return body
 }

@@ -31,13 +31,14 @@ export function createCampaignPhotos(photoPackIndex = Math.floor(Math.random() *
   const remaining = genericCampaignPhotos.map((_, index) => index).filter((photoIndex) => !selectedPhotoIndexes.has(photoIndex))
   return [...pack, ...remaining].map((photoIndex, index) => {
     const [filename, alt] = genericCampaignPhotos[photoIndex]
-    return { id: `campaign-photo-${photoIndex}`, url: demoAsset(filename), alt, selected: index < pack.length }
+    return { id: `campaign-photo-${photoIndex}`, url: demoAsset(filename), alt, selected: index < pack.length, source: 'demo' }
   })
 }
 
 export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): BusinessDraft {
   return {
     sourceUrl: 'https://maps.app.goo.gl/demo-lihi-cafe',
+    source: 'demo',
     name: '日光散步珈琲',
     category: '咖啡廳・甜點店',
     tagline: '把午後留給一杯好咖啡',
@@ -63,6 +64,7 @@ export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): B
         text: '空間很舒服，咖啡順口，甜點也不會太甜。很適合帶電腦來坐一個下午。',
         relativeTime: '2 個月前',
         selected: true,
+        source: 'demo',
       },
       {
         id: 'review-2',
@@ -71,6 +73,7 @@ export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): B
         text: '店員很親切，會依照喜歡的風味推薦豆子。窗邊自然光很漂亮。',
         relativeTime: '3 個月前',
         selected: true,
+        source: 'demo',
       },
       {
         id: 'review-3',
@@ -79,6 +82,7 @@ export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): B
         text: '巷弄裡安靜的小店，巴斯克很好吃，假日建議早點來。',
         relativeTime: '5 個月前',
         selected: true,
+        source: 'demo',
       },
     ],
     template: 'editorial',

@@ -5,6 +5,12 @@ export type BusinessPhoto = {
   url: string
   alt: string
   selected: boolean
+  source?: 'google_places' | 'merchant' | 'demo'
+  sourceUrl?: string
+  authorName?: string
+  authorUrl?: string
+  authorAvatarUrl?: string
+  reportUrl?: string
 }
 
 export type BusinessReview = {
@@ -14,6 +20,11 @@ export type BusinessReview = {
   text: string
   relativeTime: string
   selected: boolean
+  source?: 'google_places' | 'merchant' | 'demo'
+  sourceUrl?: string
+  authorUrl?: string
+  authorAvatarUrl?: string
+  reportUrl?: string
 }
 
 export type BusinessHours = {
@@ -23,6 +34,8 @@ export type BusinessHours = {
 
 export type BusinessDraft = {
   sourceUrl: string
+  source?: 'google_places' | 'merchant' | 'demo'
+  googlePlaceId?: string
   name: string
   category: string
   tagline: string
