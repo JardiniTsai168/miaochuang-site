@@ -87,14 +87,18 @@ for (const item of cases) {
   const previewFrame = page.frames().find((frame) => frame !== page.mainFrame() && frame.locator('h1').first())
   let heroTitle
   let heroDecorOverlap
+  let templateMetrics
   if (item.name.startsWith('studio-') && previewFrame) {
     heroTitle = await previewFrame.locator('h1').first().evaluate((heading) => {
       const style = getComputedStyle(heading)
       const fontSize = Number.parseFloat(style.fontSize)
       const lineHeight = Number.parseFloat(style.lineHeight)
+      const headingRect = heading.getBoundingClientRect()
+      const heroRect = heading.closest('.hero')?.getBoundingClientRect()
       return {
         fontSize,
-        lineCount: Math.round(heading.getBoundingClientRect().height / lineHeight),
+        lineCount: Math.round(headingRect.height / lineHeight),
+        outOfHero: heroRect ? headingRect.left < heroRect.left - 1 || headingRect.right > heroRect.right + 1 : false,
       }
     }).catch(() => undefined)
     if (item.name === 'studio-desktop') {
@@ -107,6 +111,23 @@ for (const item of cases) {
         return Math.round(overlapWidth * overlapHeight)
       })
     }
+    templateMetrics = await previewFrame.evaluate(() => {
+      const sections = [...document.querySelectorAll('.section')]
+      const sectionPaddingMax = Math.max(0, ...sections.flatMap((section) => {
+        const style = getComputedStyle(section)
+        return [Number.parseFloat(style.paddingTop), Number.parseFloat(style.paddingBottom)]
+      }))
+      const layout = document.body.dataset.layout
+      const protectedImageFits = ['calm', 'compact'].includes(layout || '')
+        ? [...document.querySelectorAll('.hero-media img')].map((image) => getComputedStyle(image).objectFit)
+        : []
+      const media = document.querySelector('.hero-media')?.getBoundingClientRect()
+      const overlay = document.querySelector('.industry-art')?.getBoundingClientRect()
+      const mediaOverlayArea = media && overlay && ['calm', 'compact'].includes(layout || '')
+        ? Math.round(Math.max(0, Math.min(media.right, overlay.right) - Math.max(media.left, overlay.left)) * Math.max(0, Math.min(media.bottom, overlay.bottom) - Math.max(media.top, overlay.top)))
+        : 0
+      return { layout, sectionPaddingMax, protectedImageFits, mediaOverlayArea, frameOverflow: document.documentElement.scrollWidth > window.innerWidth }
+    })
   }
   await page.screenshot({ path: `${outputDir}/${item.name}.png`, fullPage: false })
   results.push({
@@ -116,6 +137,7 @@ for (const item of cases) {
     brokenImages,
     ...(heroTitle === undefined ? {} : { heroTitle }),
     ...(heroDecorOverlap === undefined ? {} : { heroDecorOverlap }),
+    ...(templateMetrics === undefined ? {} : { templateMetrics }),
     ...(previewLinkSafe === undefined ? {} : { previewLinkSafe }),
     ...(editorPanelScrolls === undefined ? {} : { editorPanelScrolls, availablePhotos }),
   })
@@ -125,4 +147,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos < 10) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 44 : 64) || result.heroTitle.lineCount > 2)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos < 10) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 44 : 64) || result.heroTitle.lineCount > 1 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 52 : 64) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1

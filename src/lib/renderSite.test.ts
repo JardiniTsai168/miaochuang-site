@@ -49,8 +49,8 @@ describe('renderSite', () => {
     expect(html).toContain('咖啡杯插圖')
   })
 
-  it('keeps the vivid template title on one line', () => {
-    const html = renderSite({ ...createDemoBusiness(), template: 'vivid' })
+  it.each(['editorial', 'vivid', 'calm', 'compact', 'mosaic'] as const)('keeps the %s template title on one line', (template) => {
+    const html = renderSite({ ...createDemoBusiness(), template })
     expect(html).toContain('white-space:nowrap')
     expect(html).toMatch(/<h1 style="--title-size:\d+px">日光散步珈琲<\/h1>/)
   })
