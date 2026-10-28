@@ -86,6 +86,7 @@ for (const item of cases) {
   }))).reduce((total, count) => total + count, 0)
   const previewFrame = page.frames().find((frame) => frame !== page.mainFrame() && frame.locator('h1').first())
   let heroTitle
+  let heroDecorOverlap
   if (item.name.startsWith('studio-') && previewFrame) {
     heroTitle = await previewFrame.locator('h1').first().evaluate((heading) => {
       const style = getComputedStyle(heading)
@@ -96,6 +97,16 @@ for (const item of cases) {
         lineCount: Math.round(heading.getBoundingClientRect().height / lineHeight),
       }
     }).catch(() => undefined)
+    if (item.name === 'studio-desktop') {
+      heroDecorOverlap = await previewFrame.evaluate(() => {
+        const index = document.querySelector('.hero-index')?.getBoundingClientRect()
+        const content = document.querySelector('.hero-content')?.getBoundingClientRect()
+        if (!index || !content) return undefined
+        const overlapWidth = Math.max(0, Math.min(index.right, content.right) - Math.max(index.left, content.left))
+        const overlapHeight = Math.max(0, Math.min(index.bottom, content.bottom) - Math.max(index.top, content.top))
+        return Math.round(overlapWidth * overlapHeight)
+      })
+    }
   }
   await page.screenshot({ path: `${outputDir}/${item.name}.png`, fullPage: false })
   results.push({
@@ -104,6 +115,7 @@ for (const item of cases) {
     overflow: dimensions.content > dimensions.viewport,
     brokenImages,
     ...(heroTitle === undefined ? {} : { heroTitle }),
+    ...(heroDecorOverlap === undefined ? {} : { heroDecorOverlap }),
     ...(previewLinkSafe === undefined ? {} : { previewLinkSafe }),
     ...(editorPanelScrolls === undefined ? {} : { editorPanelScrolls, availablePhotos }),
   })
@@ -113,4 +125,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos < 10) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 44 : 64) || result.heroTitle.lineCount > 2)))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos < 10) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 44 : 64) || result.heroTitle.lineCount > 2)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0))) process.exitCode = 1

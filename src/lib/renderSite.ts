@@ -274,7 +274,7 @@ function professionalTemplateStyles(template: TemplateId): string {
       .hero{min-height:320px;width:min(calc(100% - 32px),var(--max));margin:0 auto 24px;display:block;overflow:visible;background:transparent}
       .hero-media{position:relative;width:72%;height:286px;margin-left:auto;overflow:hidden}
       .hero-media:after{background:linear-gradient(90deg,rgba(28,23,20,.12),rgba(28,23,20,0) 55%)}
-      .hero-content{position:absolute;left:0;bottom:22px;width:48%;padding:26px 30px;background:var(--surface);color:var(--ink);border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+      .hero-content{position:absolute;left:0;bottom:0;width:48%;padding:26px 30px;background:var(--surface);color:var(--ink);border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
       .hero h1{max-width:10ch;line-height:1.08}
       .hero .tagline{margin-top:10px;font-size:1rem}.hero-actions{margin-top:14px}.button{min-height:42px;border-color:var(--ink)}
       .hero-index{left:0;top:0;color:var(--accent);font-size:3.2rem}.industry-art{right:12px;bottom:12px}
