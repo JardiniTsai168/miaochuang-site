@@ -12,7 +12,7 @@ describe('demo campaign photo packs', () => {
 
   it('offers all demo photos while keeping one five-photo campaign pack selected', () => {
     const draft = createDemoBusiness(1_000, 7)
-    expect(draft.photos).toHaveLength(10)
+    expect(draft.photos).toHaveLength(8)
     expect(draft.photos.filter((photo) => photo.selected)).toHaveLength(5)
     expect(draft.photos.slice(0, 5).every((photo) => photo.selected)).toBe(true)
     expect(draft.photos.slice(5).every((photo) => !photo.selected)).toBe(true)

@@ -1,88 +1,60 @@
 # 秒創網站 MVP
 
-給已有 Google 商家、但沒有官方網站的實體店家使用。店家貼上 Google 商家網址後，可確認資料、挑選照片與評論、修改智慧生成文案，並在五套固定模板中預覽單頁形象網站。
+輸入產業、品牌／網站名稱與三個優勢，AI 會生成繁體中文網站文案與 8 張一致風格的品牌影像，再讓使用者挑選五套版型、修改內容與準備發布。營業時間選填。
 
-## 已完成範圍
+## 使用流程
 
-- Google 商家網址格式驗證
-- Cloudflare Worker 串接 Google Places API，支援真實商家資料即時匯入
-- Google 照片由 Worker 即時串流，不轉存、不長期快取
-- 照片作者、評論作者、原始內容與 Google Maps 來源歸屬
-- 48 小時 localStorage 草稿
-- 店家文字、服務、社群與短影音資料編輯
-- 最多 3 次安全文案重生（目前為本地規則產生器）
-- 照片與 Google 評論選擇
-- 五套響應式模板：編輯誌、醒目海報、靜謐藝廊、手作菜單、影像拼貼
-- 桌面／手機即時 `iframe srcDoc` 預覽
-- 可在新分頁開啟完整純靜態 HTML
-- 基礎 SEO、Open Graph、LocalBusiness JSON-LD
-- lihiDomain 串接交接畫面
+1. 輸入產業、品牌名稱、三個優勢；營業時間選填。
+2. AI 產出主標題、品牌介紹、三個優勢文案與 8 張品牌影像。
+3. 系統預選 5 張影像套入五套響應式模板。
+4. 使用者切換版型、修改文案、增減影像與補充聯絡資料。
+5. 確認後銜接 lihiDomain 網域搜尋、結帳與發布。
+
+AI 不得捏造地址、價格、獎項、創立年份或使用者未提供的服務。生成影像發布前必須由品牌確認人物、商品與場景符合實際情況。
+
+## 已完成
+
+- 品牌 brief 表單與完整欄位驗證
+- Cloudflare Worker 串接 OpenAI Structured Outputs 與 Images API
+- 8 張影像角色：主視覺、主理人、顧客、產品／服務、過程、空間、細節、門面
+- 兩張並行生成、失敗訊息與上游錯誤隔離
+- 8 張候選、預選 5 張、最多選 8 張
+- 五套響應式模板與桌面／手機即時預覽
+- 48 小時預覽、內容與影像編輯、lihiDomain 交接畫面
 
 ## 暫不包含
 
-- lihiDomain 登入、網域搜尋、結帳、DNS、SSL 與正式部署
-- Google Places 資料永久儲存或烘焙進正式靜態網站
-- 真正的 LLM 文案 API
-- 檔案上傳與正式發布
+- AI 影像永久儲存與店家自有照片上傳
+- lihiDomain 登入、網域搜尋、結帳、DNS、SSL 與正式發布
+- 正式發布後的內容管理後台
 
-## 開發
+## 開發與驗證
 
 ```bash
 npm install
 npm run dev
-```
-
-預設網址：`http://localhost:4173`
-
-## 驗證
-
-```bash
 npm run check
 ```
 
-## Google Places Worker
+## AI Worker
 
-Worker 使用兩個 server-side secrets：
+Worker 使用 server-side secret：
 
 ```bash
-npx wrangler secret put GOOGLE_MAPS_API_KEY
-npx wrangler secret put PHOTO_SIGNING_SECRET
+npx wrangler secret put OPENAI_API_KEY
 npm run worker:deploy
 ```
 
-本地開發可用 `.dev.vars` 提供相同變數；該檔案不可提交。部署後，把 Worker origin 設為前端建置變數 `VITE_IMPORT_API_BASE_URL`。GitHub Pages workflow 會從同名 repository variable 讀取。
+可選環境變數：
 
-`ALLOWED_ORIGINS` 預設允許本機 Vite 預覽與正式 GitHub Pages origin；若網址改變，需同步更新 `wrangler.jsonc`。
+- `OPENAI_TEXT_MODEL`：預設 `gpt-6-astra`
+- `OPENAI_IMAGE_MODEL`：預設 `gpt-image-2.5-flare`
+- `ALLOWED_ORIGINS`：允許呼叫 Worker 的前端 origins
 
-### 內容使用邊界
+部署後將 Worker origin 設為 GitHub repository variable `VITE_GENERATION_API_BASE_URL`。前端建置流程會讀取這個變數。
 
-- Places 內容只在目前工作階段即時取得與顯示，不寫入 localStorage、R2 或資料庫。
-- API 圖片每次透過 Worker 即時取得，回應使用 `Cache-Control: no-store`。
-- 預覽保留 Google Maps、照片作者、評論作者、個別內容來源與回報連結。
-- 正式發布必須改用店家確認為自有的文字與自行上傳、具有發布權的照片；不可直接把 Places 內容永久發布。
+## API 契約
 
-## GitHub Pages
+`POST /api/generate-content` 接收品牌 brief，回傳結構化文案、8 個影像 prompts 與 8 個 alt texts。
 
-推送到 `main` 後，`.github/workflows/deploy.yml` 會自動執行測試、production build 並部署 `dist/`。
-
-## Google 商家匯入契約
-
-前端會呼叫：
-
-```http
-POST /api/import-place
-Content-Type: application/json
-
-{"sourceUrl":"https://maps.app.goo.gl/..."}
-```
-
-成功時回傳：
-
-```json
-{
-  "mode": "live",
-  "draft": "BusinessDraft"
-}
-```
-
-API key 只存在 Cloudflare Worker secret。Places 內容不得下載成自有資產或永久寫入發布後 HTML；正式發布使用店家自有內容。
+`POST /api/generate-image` 接收單張 prompt，回傳壓縮 JPEG data URL。前端以兩個並行工作逐張完成 8 張影像，避免單一長請求。

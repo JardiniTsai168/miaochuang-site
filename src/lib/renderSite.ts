@@ -21,6 +21,7 @@ function escapeHtml(value: string): string {
 
 function safeUrl(value: string, fallback = '#'): string {
   if (/^\/(?!\/)/.test(value)) return escapeHtml(value)
+  if (/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=\s]+$/iu.test(value)) return value
   try {
     const url = new URL(value)
     return ['http:', 'https:', 'tel:'].includes(url.protocol) ? escapeHtml(url.toString()) : fallback
@@ -124,20 +125,20 @@ function sharedSections(draft: BusinessDraft) {
       ? `<section class="section gallery" id="gallery"><div class="section-heading"><p>SPACE & MOMENTS</p><h2>從照片，先認識我們</h2></div><div class="gallery-grid">${gallery
           .map(
             (photo) =>
-              `<figure><img src="${safeUrl(photo.url)}" alt="${escapeHtml(photo.alt)}" loading="lazy"><figcaption><span>${escapeHtml(photo.alt)}</span>${photo.source === 'google_places' && photo.sourceUrl ? `<span class="photo-attribution">${photo.authorUrl && photo.authorName ? `<a href="${safeUrl(photo.authorUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(photo.authorName)}</a>` : photo.authorName ? escapeHtml(photo.authorName) : ''}<a href="${safeUrl(photo.sourceUrl)}" target="_blank" rel="noopener noreferrer">Google Maps ↗</a>${photo.reportUrl ? `<a href="${safeUrl(photo.reportUrl)}" target="_blank" rel="noopener noreferrer">回報</a>` : ''}</span>` : ''}</figcaption></figure>`,
+              `<figure><img src="${safeUrl(photo.url)}" alt="${escapeHtml(photo.alt)}" loading="lazy"><figcaption><span>${escapeHtml(photo.alt)}</span>${photo.sourceUrl ? `<a href="${safeUrl(photo.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看來源 ↗</a>` : ''}</figcaption></figure>`,
           )
           .join('')}</div></section>`
       : '',
     reviewHtml: reviews.length
-      ? `<section class="section reviews" id="reviews"><div class="section-heading"><p>GOOGLE REVIEWS</p><h2>來訪的人這樣說</h2></div><div class="review-list">${reviews
+      ? `<section class="section reviews" id="reviews"><div class="section-heading"><p>CUSTOMER VOICES</p><h2>顧客這樣說</h2></div><div class="review-list">${reviews
           .map(
             (review) =>
-              `<blockquote><div class="stars" aria-label="${review.rating} 顆星">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div><p>「${escapeHtml(review.text)}」</p><footer><span class="review-author">${review.authorAvatarUrl ? `<img src="${safeUrl(review.authorAvatarUrl)}" alt="" loading="lazy">` : ''}${review.authorUrl ? `<a href="${safeUrl(review.authorUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(review.author)}</a>` : `<strong>${escapeHtml(review.author)}</strong>`}</span><span>${escapeHtml(review.relativeTime)}・Google 評論（Google Maps）</span>${review.sourceUrl ? `<a class="review-source" href="${safeUrl(review.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原評論 ↗</a>` : ''}${review.reportUrl ? `<a class="review-source" href="${safeUrl(review.reportUrl)}" target="_blank" rel="noopener noreferrer">回報評論</a>` : ''}</footer></blockquote>`,
+              `<blockquote><div class="stars" aria-label="${review.rating} 顆星">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div><p>「${escapeHtml(review.text)}」</p><footer><span class="review-author"><strong>${escapeHtml(review.author)}</strong></span><span>${escapeHtml(review.relativeTime)}</span>${review.sourceUrl ? `<a class="review-source" href="${safeUrl(review.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看來源 ↗</a>` : ''}</footer></blockquote>`,
           )
-          .join('')}</div>${reviews.some((review) => review.source === 'google_places') ? '<p class="google-review-notice"><span translate="no">Google Maps</span> 評論依 Google Places 預設的相關性排序顯示；內容保留原文。</p>' : ''}</section>`
+          .join('')}</div></section>`
       : '',
-    heroSourceHtml: hero?.source === 'google_places' && hero.sourceUrl
-      ? `<div class="google-photo-source">主視覺來源：${hero.authorUrl && hero.authorName ? `<a href="${safeUrl(hero.authorUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(hero.authorName)}</a> · ` : hero.authorName ? `${escapeHtml(hero.authorName)} · ` : ''}<a href="${safeUrl(hero.sourceUrl)}" target="_blank" rel="noopener noreferrer">Google Maps ↗</a>${hero.reportUrl ? ` · <a href="${safeUrl(hero.reportUrl)}" target="_blank" rel="noopener noreferrer">回報</a>` : ''}</div>`
+    heroSourceHtml: hero?.sourceUrl
+      ? `<div class="google-photo-source"><a href="${safeUrl(hero.sourceUrl)}" target="_blank" rel="noopener noreferrer">主視覺來源 ↗</a></div>`
       : '',
     videoHtml: draft.videoUrl
       ? `<section class="section video"><div class="section-heading"><p>SHORT FILM</p><h2>用一支影片認識我們</h2></div>${
@@ -390,6 +391,7 @@ function completeArtDirectionStyles(template: TemplateId): string {
 function fixedTemplateRules(): string {
   return `
     .hero h1{max-width:none;white-space:nowrap;font-size:min(var(--title-size),64px)}
+    .about-grid.solo{grid-template-columns:1fr}
     .section{padding-block:56px}
     .template-compact .section{padding-block:32px}
     @media(max-width:759px){.hero h1{font-size:min(var(--title-size),44px)}.section{padding-block:44px}.template-compact .section{padding-block:22px}}
@@ -427,8 +429,9 @@ export function renderSite(draft: BusinessDraft): string {
     </header>${shared.heroSourceHtml}`
   const identityHtml = `<aside class="identity-strip" aria-label="店家產業與特色"><span class="identity-icon" aria-hidden="true">${identity.icon}</span><div class="identity-label"><span>${identity.label}</span><strong>${escapeHtml(draft.category)}</strong></div>${identityServices ? `<div class="identity-services">${identityServices}</div>` : ''}</aside>`
   const introHtml = `<div class="template-intro" aria-hidden="true"><span>${templateNames[draft.template]} / ${escapeHtml(draft.category)}</span><span></span><span></span></div>`
-  const aboutHtml = `<section class="section about" id="about"><div class="section-heading"><p>ABOUT US</p><h2>一間店，也是一種生活的提案</h2></div><div class="about-grid"><p class="about-copy">${escapeHtml(draft.description)}</p><ul class="facts">${facts}</ul></div></section>`
-  const contactHtml = `<section class="section contact${draft.template === 'compact' ? ' visit-first' : ''}" id="contact"><div class="section-heading"><p>VISIT & CONTACT</p><h2>期待與你見面</h2></div><div class="contact-grid"><div><p class="map-address">${escapeHtml(draft.address)}</p>${draft.googleMapsUrl ? `<a href="${safeUrl(draft.googleMapsUrl)}" target="_blank" rel="noopener noreferrer">在 Google 地圖開啟 ↗</a>` : ''}</div><div class="contact-links">${shared.contactLinks}</div></div></section>`
+  const aboutHtml = `<section class="section about" id="about"><div class="section-heading"><p>ABOUT US</p><h2>一個品牌，也是一種選擇</h2></div><div class="about-grid${facts ? '' : ' solo'}"><p class="about-copy">${escapeHtml(draft.description)}</p>${facts ? `<ul class="facts">${facts}</ul>` : ''}</div></section>`
+  const hasContact = Boolean(draft.address || draft.phone || draft.googleMapsUrl || draft.lineUrl || draft.instagramUrl)
+  const contactHtml = hasContact ? `<section class="section contact${draft.template === 'compact' ? ' visit-first' : ''}" id="contact"><div class="section-heading"><p>CONTACT</p><h2>開始認識我們</h2></div><div class="contact-grid"><div>${draft.address ? `<p class="map-address">${escapeHtml(draft.address)}</p>` : ''}${draft.googleMapsUrl ? `<a href="${safeUrl(draft.googleMapsUrl)}" target="_blank" rel="noopener noreferrer">開啟地圖 ↗</a>` : ''}</div><div class="contact-links">${shared.contactLinks}</div></div></section>` : ''
   const templateLayouts: Record<TemplateId, string[]> = {
     editorial: [heroHtml, introHtml, identityHtml, shared.galleryHtml, aboutHtml, shared.serviceHtml, shared.reviewHtml, shared.videoHtml, contactHtml],
     vivid: [heroHtml, introHtml, shared.serviceHtml, identityHtml, shared.galleryHtml, aboutHtml, shared.videoHtml, shared.reviewHtml, contactHtml],
@@ -445,7 +448,7 @@ export function renderSite(draft: BusinessDraft): string {
     description: draft.description,
     address: draft.address,
     telephone: draft.phone,
-    image: shared.gallery.map((photo) => photo.url),
+    image: shared.gallery.map((photo) => photo.url).filter((url) => /^https?:|^\/(?!\/)/u.test(url)),
   }
 
   return `<!doctype html>
@@ -458,7 +461,7 @@ export function renderSite(draft: BusinessDraft): string {
   <meta name="description" content="${description}">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
-  ${heroImage ? `<meta property="og:image" content="${safeUrl(heroImage)}">` : ''}
+  ${heroImage && !heroImage.startsWith('data:') ? `<meta property="og:image" content="${safeUrl(heroImage)}">` : ''}
   <meta name="theme-color" content="${shared.accent}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -468,7 +471,7 @@ export function renderSite(draft: BusinessDraft): string {
 </head>
 <body class="template-${draft.template}" data-layout="${draft.template}">
   <a class="skip" href="#main" target="_self">跳至主要內容</a>
-  <nav class="site-nav" aria-label="主要導覽"><strong>${escapeHtml(draft.name)}</strong><div><a href="#about" target="_self">關於我們</a>${shared.services.length ? '<a href="#services" target="_self">服務項目</a>' : ''}${shared.gallery.length ? '<a href="#gallery" target="_self">店家照片</a>' : ''}<a href="#contact" target="_self">聯絡資訊</a></div></nav>
+  <nav class="site-nav" aria-label="主要導覽"><strong>${escapeHtml(draft.name)}</strong><div><a href="#about" target="_self">關於品牌</a>${shared.services.length ? '<a href="#services" target="_self">品牌優勢</a>' : ''}${shared.gallery.length ? '<a href="#gallery" target="_self">品牌影像</a>' : ''}${hasContact ? '<a href="#contact" target="_self">聯絡資訊</a>' : ''}</div></nav>
   <main id="main">
     ${pageContent}
   </main>

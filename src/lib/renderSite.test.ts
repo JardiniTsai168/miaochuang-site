@@ -9,7 +9,7 @@ describe('renderSite', () => {
     expect(html).toContain('<!doctype html>')
     expect(html).toContain('<script type="application/ld+json">')
     expect(html).toContain(draft.name)
-    expect(html).toContain('Google 評論')
+    expect(html).toContain('品牌影像')
     expect(html).not.toContain('拿鐵與咖啡豆')
   })
 
@@ -39,7 +39,7 @@ describe('renderSite', () => {
     expect(editorial.indexOf('id="gallery"')).toBeLessThan(editorial.indexOf('id="about"'))
     expect(vivid.indexOf('id="services"')).toBeLessThan(vivid.indexOf('id="about"'))
     expect(compact.indexOf('id="contact"')).toBeLessThan(compact.indexOf('id="services"'))
-    expect(mosaic.indexOf('id="gallery"')).toBeLessThan(mosaic.indexOf('id="reviews"'))
+    expect(mosaic.indexOf('id="gallery"')).toBeLessThan(mosaic.indexOf('id="services"'))
   })
 
   it('adds an industry-specific illustration from the business category', () => {
@@ -69,29 +69,13 @@ describe('renderSite', () => {
     expect(html).not.toContain('<img src="#"')
   })
 
-  it('preserves Google photo and review attribution for live content', () => {
+  it('accepts generated image data URLs while blocking other data payloads', () => {
     const draft = createDemoBusiness()
-    draft.source = 'google_places'
-    draft.photos[0] = {
-      ...draft.photos[0],
-      source: 'google_places',
-      sourceUrl: 'https://maps.google.com/photo/1',
-      authorName: '店家攝影師',
-      authorUrl: 'https://maps.google.com/user/1',
-      reportUrl: 'https://maps.google.com/photo/1/report',
-    }
-    draft.reviews[0] = {
-      ...draft.reviews[0],
-      source: 'google_places',
-      sourceUrl: 'https://maps.google.com/review/1',
-      authorUrl: 'https://maps.google.com/user/2',
-      reportUrl: 'https://maps.google.com/review/1/report',
-    }
+    draft.photos[0].url = 'data:image/jpeg;base64,YWJjMTIz'
+    draft.photos[1].url = 'data:text/html;base64,PHNjcmlwdD4='
     const html = renderSite(draft)
-    expect(html).toContain('主視覺來源：')
-    expect(html).toContain('店家攝影師</a> · <a href="https://maps.google.com/photo/1"')
-    expect(html).toContain('查看原評論 ↗')
-    expect(html).toContain('回報評論')
-    expect(html).toContain('評論依 Google Places 預設的相關性排序顯示')
+    expect(html).toContain('src="data:image/jpeg;base64,YWJjMTIz"')
+    expect(html).not.toContain('data:text/html')
   })
+
 })

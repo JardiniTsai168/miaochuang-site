@@ -11,17 +11,16 @@ describe('App', () => {
     vi.restoreAllMocks()
   })
 
-  it('explains how to fix an invalid URL', async () => {
+  it('requires the complete brand brief', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.type(screen.getByLabelText('Google 商家網址'), 'https://example.com/store')
     await user.click(screen.getByRole('button', { name: /生成我的網站/ }))
-    expect(screen.getByText(/請貼上完整的 Google 地圖商家網址/)).toBeInTheDocument()
+    expect(screen.getByText(/請輸入產業類型/)).toBeInTheDocument()
   })
 
   it('shows the core promise and pricing disclosure', () => {
     render(<App />)
-    expect(screen.getByRole('heading', { name: /貼上 Google 商家/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /說出品牌的優勢/ })).toBeInTheDocument()
     expect(screen.getByText('第二年託管 NT$999／年')).toBeInTheDocument()
     expect(screen.getByText(/網域續約費另計/)).toBeInTheDocument()
   })
@@ -48,18 +47,18 @@ describe('App', () => {
     expect(screen.getByText('醒目海報', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
-  it('offers ten imported photos with five selected by default', async () => {
+  it('offers eight generated photo candidates with five selected by default', async () => {
     const user = userEvent.setup()
     saveDraft(createDemoBusiness(Date.now(), 0))
     render(<App />)
     await user.click(screen.getByRole('button', { name: /^照片$/ }))
 
     const photoButtons = screen.getAllByRole('button').filter((button) => button.querySelector('.photo-picker img'))
-    expect(photoButtons).toHaveLength(10)
+    expect(photoButtons).toHaveLength(8)
     expect(photoButtons.filter((button) => button.getAttribute('aria-pressed') === 'true')).toHaveLength(5)
-    expect(screen.getByText('已選 5／上限 12')).toBeInTheDocument()
+    expect(screen.getByText('已選 5／上限 8')).toBeInTheDocument()
 
     await user.click(photoButtons[5])
-    expect(screen.getByText('已選 6／上限 12')).toBeInTheDocument()
+    expect(screen.getByText('已選 6／上限 8')).toBeInTheDocument()
   })
 })

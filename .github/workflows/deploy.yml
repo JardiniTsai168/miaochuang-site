@@ -33,7 +33,7 @@ jobs:
         run: npm run worker:typecheck
       - name: Build
         env:
-          VITE_IMPORT_API_BASE_URL: ${{ vars.VITE_IMPORT_API_BASE_URL }}
+          VITE_GENERATION_API_BASE_URL: ${{ vars.VITE_GENERATION_API_BASE_URL }}
         run: npm run build
       - name: Configure Pages
         uses: actions/configure-pages@v5

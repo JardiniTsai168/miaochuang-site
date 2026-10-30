@@ -1,47 +1,30 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createDemoBusiness } from '../data/demoBusiness'
-import { importBusiness, isGoogleBusinessUrl } from './source'
+import { generateBusiness, validateBrief } from './source'
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('isGoogleBusinessUrl', () => {
-  it('accepts supported Google Maps URLs', () => {
-    expect(isGoogleBusinessUrl('https://maps.app.goo.gl/abc123')).toBe(true)
-    expect(isGoogleBusinessUrl('https://www.google.com/maps/place/Test')).toBe(true)
-    expect(isGoogleBusinessUrl('https://maps.google.com/?q=coffee')).toBe(true)
+const brief = { industry: '咖啡廳', brandName: '日光散步', advantages: ['自家烘焙', '每日手作', '安靜空間'] as [string, string, string], hours: '每日 10:00–18:00' }
+
+describe('brand brief generation', () => {
+  it('requires industry, name and exactly three filled advantages', () => {
+    expect(validateBrief(brief)).toBe('')
+    expect(validateBrief({ ...brief, advantages: ['一', '', '三'] })).toMatch(/三個優點/)
   })
 
-  it('rejects invalid and non-Google URLs', () => {
-    expect(isGoogleBusinessUrl('not-a-url')).toBe(false)
-    expect(isGoogleBusinessUrl('http://maps.app.goo.gl/abc123')).toBe(false)
-    expect(isGoogleBusinessUrl('https://example.com/maps/place/Test')).toBe(false)
-  })
-})
-
-describe('importBusiness', () => {
-  it('keeps the bundled demo local without calling the API', async () => {
-    const fetcher = vi.spyOn(globalThis, 'fetch')
-    const demo = createDemoBusiness()
-    await expect(importBusiness(demo.sourceUrl)).resolves.toMatchObject({ mode: 'demo', draft: { source: 'demo' } })
-    expect(fetcher).not.toHaveBeenCalled()
-  })
-
-  it('returns a live Places draft from the import API', async () => {
-    const liveDraft = { ...createDemoBusiness(), source: 'google_places' as const, googlePlaceId: 'place-1' }
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ mode: 'live', draft: liveDraft }))
-    await expect(importBusiness('https://www.google.com/maps/place/Live+Store')).resolves.toMatchObject({
-      mode: 'live',
-      draft: { source: 'google_places', googlePlaceId: 'place-1' },
+  it('generates eight candidate images and preselects five', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      if (String(input).endsWith('/api/generate-content')) return Response.json({
+        tagline: '把午後留給一杯好咖啡', description: '品牌介紹', services: brief.advantages,
+        photoPrompts: Array.from({ length: 8 }, (_, i) => `prompt ${i}`),
+        photoAlts: Array.from({ length: 8 }, (_, i) => `品牌影像 ${i + 1}`),
+      })
+      return Response.json({ dataUrl: 'data:image/jpeg;base64,abc123' })
     })
-  })
-
-  it('shows the sanitized API error instead of silently using demo data', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
-      error: { code: 'PLACE_NOT_FOUND', message: '找不到這間 Google 商家，請確認網址後再試。' },
-    }, { status: 404 }))
-    await expect(importBusiness('https://www.google.com/maps/place/Missing+Store')).rejects.toMatchObject({
-      code: 'PLACE_NOT_FOUND',
-      message: '找不到這間 Google 商家，請確認網址後再試。',
-    })
+    const result = await generateBusiness(brief)
+    expect(result.mode).toBe('generated')
+    expect(result.draft).toMatchObject({ source: 'ai_generated', name: '日光散步', category: '咖啡廳', reviews: [] })
+    expect(result.draft.photos).toHaveLength(8)
+    expect(result.draft.photos.filter((photo) => photo.selected)).toHaveLength(5)
+    expect(fetcher).toHaveBeenCalledTimes(9)
   })
 })

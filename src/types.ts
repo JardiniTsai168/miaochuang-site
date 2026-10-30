@@ -5,7 +5,7 @@ export type BusinessPhoto = {
   url: string
   alt: string
   selected: boolean
-  source?: 'google_places' | 'merchant' | 'demo'
+  source?: 'ai_generated' | 'merchant' | 'demo'
   sourceUrl?: string
   authorName?: string
   authorUrl?: string
@@ -20,7 +20,7 @@ export type BusinessReview = {
   text: string
   relativeTime: string
   selected: boolean
-  source?: 'google_places' | 'merchant' | 'demo'
+  source?: 'merchant' | 'demo'
   sourceUrl?: string
   authorUrl?: string
   authorAvatarUrl?: string
@@ -33,9 +33,8 @@ export type BusinessHours = {
 }
 
 export type BusinessDraft = {
-  sourceUrl: string
-  source?: 'google_places' | 'merchant' | 'demo'
-  googlePlaceId?: string
+  sourceUrl?: string
+  source?: 'ai_generated' | 'merchant' | 'demo'
   name: string
   category: string
   tagline: string
@@ -59,7 +58,14 @@ export type BusinessDraft = {
 
 export type ImportResult = {
   draft: BusinessDraft
-  mode: 'demo' | 'live'
+  mode: 'demo' | 'generated'
+}
+
+export type BrandBrief = {
+  industry: string
+  brandName: string
+  advantages: [string, string, string]
+  hours?: string
 }
 
 export type AppStage = 'landing' | 'importing' | 'studio' | 'ready'

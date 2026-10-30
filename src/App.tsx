@@ -9,24 +9,21 @@ import {
   Image as ImageIcon,
   Laptop,
   LayoutTemplate,
-  MapPin,
-  MessageSquareQuote,
+  BadgeCheck,
   Palette,
   Pencil,
-  RefreshCw,
   RotateCcw,
   Smartphone,
   Sparkles,
   Store,
 } from 'lucide-react'
 import { createDemoBusiness } from './data/demoBusiness'
-import { regenerateCopy } from './lib/copyGenerator'
 import { clearDraft, formatRemainingTime, loadDraft, saveDraft } from './lib/draftStorage'
 import { openPreview, renderSite, templateNames } from './lib/renderSite'
-import { importBusiness, isGoogleBusinessUrl } from './lib/source'
-import type { AppStage, BusinessDraft, PreviewViewport, TemplateId } from './types'
+import { generateBusiness, validateBrief } from './lib/source'
+import type { AppStage, BrandBrief, BusinessDraft, PreviewViewport, TemplateId } from './types'
 
-type EditorTab = 'template' | 'content' | 'photos' | 'reviews'
+type EditorTab = 'template' | 'content' | 'photos'
 type StudioView = 'edit' | 'preview'
 
 const templates: Array<{ id: TemplateId; name: string; note: string; accent: string }> = [
@@ -37,7 +34,7 @@ const templates: Array<{ id: TemplateId; name: string; note: string; accent: str
   { id: 'mosaic', name: '影像拼貼', note: '不對稱相冊・故事感', accent: '#8A4D76' },
 ]
 
-const importSteps = ['確認商家網址', '整理照片與評論', '生成網站文案', '準備三種版型']
+const importSteps = ['整理品牌定位', '撰寫網站文案', '生成 8 張品牌影像', '套用五種版型']
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -65,25 +62,20 @@ function Header({ onReset, studio = false }: { onReset?: () => void; studio?: bo
   )
 }
 
-function Landing({ onImport, initialError = '' }: { onImport: (url: string) => void; initialError?: string }) {
-  const [url, setUrl] = useState('')
+function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief: BrandBrief) => void; onDemo: () => void; initialError?: string }) {
+  const [industry, setIndustry] = useState('')
+  const [brandName, setBrandName] = useState('')
+  const [advantages, setAdvantages] = useState<[string, string, string]>(['', '', ''])
+  const [hours, setHours] = useState('')
   const [error, setError] = useState(initialError)
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
-    if (!isGoogleBusinessUrl(url)) {
-      setError('請貼上完整的 Google 地圖商家網址，例如 https://maps.app.goo.gl/...')
-      return
-    }
+    const brief: BrandBrief = { industry, brandName, advantages, hours }
+    const validationError = validateBrief(brief)
+    if (validationError) return setError(validationError)
     setError('')
-    onImport(url)
-  }
-
-  function useDemo() {
-    const demoUrl = createDemoBusiness().sourceUrl
-    setUrl(demoUrl)
-    setError('')
-    onImport(demoUrl)
+    onGenerate(brief)
   }
 
   return (
@@ -92,31 +84,21 @@ function Landing({ onImport, initialError = '' }: { onImport: (url: string) => v
       <main>
         <section className="hero-app" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="eyebrow"><Sparkles size={15} aria-hidden="true" /> 給還沒有官網的實體店家</p>
-            <h1 id="hero-title"><span>貼上 Google 商家，</span><br /><em>秒變你的品牌網站。</em></h1>
-            <p className="hero-lead">照片、評論、營業資訊一次整理。你只要確認內容、挑一個喜歡的版型，就能準備好自己的官方網站。</p>
-            <form className="source-form" onSubmit={submit} noValidate>
-              <label htmlFor="google-business-url">Google 商家網址</label>
-              <div className={`url-control ${error ? 'has-error' : ''}`}>
-                <MapPin size={20} aria-hidden="true" />
-                <input
-                  id="google-business-url"
-                  type="url"
-                  inputMode="url"
-                  placeholder="https://maps.app.goo.gl/..."
-                  value={url}
-                  onChange={(event) => setUrl(event.target.value)}
-                  aria-describedby={error ? 'source-error source-help' : 'source-help'}
-                  aria-invalid={Boolean(error)}
-                />
-                <button className="primary-button" type="submit">
-                  生成我的網站 <ArrowRight size={18} aria-hidden="true" />
-                </button>
+            <p className="eyebrow"><Sparkles size={15} aria-hidden="true" /> 給想快速建立品牌網站的你</p>
+            <h1 id="hero-title"><span>說出品牌的優勢，</span><br /><em>AI 幫你完成網站。</em></h1>
+            <p className="hero-lead">輸入產業、品牌名稱與三個優點，我們會產出網站文案和 8 張品牌影像，再讓你挑版型與修改內容。</p>
+            <form className="source-form brief-form" onSubmit={submit} noValidate>
+              <div className="brief-row">
+                <label>產業類型<input value={industry} onChange={(event) => setIndustry(event.target.value)} placeholder="例如：咖啡廳、髮廊、健身工作室" /></label>
+                <label>品牌／網站名稱<input value={brandName} onChange={(event) => setBrandName(event.target.value)} placeholder="例如：日光散步珈琲" /></label>
               </div>
+              <fieldset><legend>三個優點或優勢</legend>{advantages.map((value, index) => <label key={index}><span>{index + 1}</span><input value={value} onChange={(event) => setAdvantages((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item) as [string, string, string])} placeholder={['最值得被記住的特色', '和別人不同的地方', '顧客選擇你的理由'][index]} /></label>)}</fieldset>
+              <label className="hours-field">營業時間 <small>選填</small><textarea value={hours} onChange={(event) => setHours(event.target.value)} rows={2} placeholder={'例如：\n週一至週五 10:00–19:00'} /></label>
               {error && <p className="field-error" id="source-error">{error}</p>}
-              <div className="source-help" id="source-help">
-                <span>不需要登入・約 1 分鐘完成</span>
-                <button type="button" onClick={useDemo}>先看示範結果</button>
+              <div className="brief-actions">
+                <button className="primary-button" type="submit">生成我的網站 <ArrowRight size={18} aria-hidden="true" /></button>
+                <span>生成 8 張圖片需要一點時間</span>
+                <button type="button" onClick={onDemo}>先看示範結果</button>
               </div>
             </form>
           </div>
@@ -128,16 +110,16 @@ function Landing({ onImport, initialError = '' }: { onImport: (url: string) => v
                 <div className="demo-copy"><span>把午後留給一杯好咖啡</span><i /></div>
               </div>
             </div>
-            <div className="floating-note note-source"><Check size={16} /> 商家資料已整理</div>
-            <div className="floating-note note-time"><Clock3 size={16} /> 只花 58 秒</div>
+            <div className="floating-note note-source"><Check size={16} /> 文案與圖片已生成</div>
+            <div className="floating-note note-time"><Clock3 size={16} /> 五套版型任你挑</div>
           </div>
         </section>
 
         <section className="how-it-works" aria-labelledby="how-title">
           <div className="section-intro"><p>簡單到不需要學</p><h2 id="how-title">三步，讓店家有一個正式網址</h2></div>
           <ol>
-            <li><span>01</span><div><MapPin aria-hidden="true" /><h3>貼上商家網址</h3><p>自動整理店名、照片、評論與營業資訊。</p></div></li>
-            <li><span>02</span><div><Palette aria-hidden="true" /><h3>確認內容與版型</h3><p>補上想說的話，再從三種風格挑一個。</p></div></li>
+            <li><span>01</span><div><BadgeCheck aria-hidden="true" /><h3>提供品牌重點</h3><p>只要產業、名稱與三個優勢；營業時間選填。</p></div></li>
+            <li><span>02</span><div><Palette aria-hidden="true" /><h3>AI 生成內容</h3><p>產出網站文案與 8 張一致風格的品牌影像。</p></div></li>
             <li><span>03</span><div><Store aria-hidden="true" /><h3>選網址，準備發布</h3><p>網站與品牌網址一起準備，不需要碰程式碼。</p></div></li>
           </ol>
         </section>
@@ -188,26 +170,19 @@ function Field({ label, value, onChange, multiline = false, hint }: { label: str
   )
 }
 
-function ContentEditor({ draft, update, onRegenerate }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void; onRegenerate: () => void }) {
-  const remaining = 3 - draft.regenerationCount
+function ContentEditor({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
   return (
     <div className="editor-section">
-      <div className="editor-heading"><div><p>網站內容</p><h2>先確認店家怎麼被介紹</h2></div><span className="source-badge">Google + 店家補充</span></div>
-      <Field label="店家名稱" value={draft.name} onChange={(name) => update({ name })} />
+      <div className="editor-heading"><div><p>網站內容</p><h2>先確認品牌怎麼被介紹</h2></div><span className="source-badge">AI 生成・可修改</span></div>
+      <Field label="品牌／網站名稱" value={draft.name} onChange={(name) => update({ name })} />
       <div className="field-row">
-        <Field label="店家分類" value={draft.category} onChange={(category) => update({ category })} />
-        <Field label="電話" value={draft.phone} onChange={(phone) => update({ phone })} />
+        <Field label="產業類型" value={draft.category} onChange={(category) => update({ category })} />
+        <Field label="電話（選填）" value={draft.phone} onChange={(phone) => update({ phone })} />
       </div>
       <Field label="主標題" value={draft.tagline} onChange={(tagline) => update({ tagline })} hint="AI 依照現有資料產生，你可以直接修改。" />
       <Field label="店家介紹" value={draft.description} onChange={(description) => update({ description })} multiline />
-      <div className="regenerate-row">
-        <button className="secondary-button" type="button" onClick={onRegenerate} disabled={remaining <= 0}>
-          <RefreshCw size={16} aria-hidden="true" /> 重新生成文案
-        </button>
-        <span>{remaining > 0 ? `還可生成 ${remaining} 次` : '已用完 3 次生成額度'}</span>
-      </div>
-      <Field label="服務／商品（每行一項）" value={draft.services.join('\n')} onChange={(value) => update({ services: value.split('\n').map((item) => item.trim()).filter(Boolean) })} multiline />
-      <Field label="地址" value={draft.address} onChange={(address) => update({ address })} />
+      <Field label="三個優點／優勢（每行一項）" value={draft.services.join('\n')} onChange={(value) => update({ services: value.split('\n').map((item) => item.trim()).filter(Boolean).slice(0, 3) })} multiline />
+      <Field label="地址（選填）" value={draft.address} onChange={(address) => update({ address })} />
       <div className="field-row">
         <Field label="LINE 連結" value={draft.lineUrl} onChange={(lineUrl) => update({ lineUrl })} />
         <Field label="Instagram 連結" value={draft.instagramUrl} onChange={(instagramUrl) => update({ instagramUrl })} />
@@ -221,14 +196,14 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
   const selected = draft.photos.filter((photo) => photo.selected).length
   function toggle(id: string) {
     const target = draft.photos.find((photo) => photo.id === id)
-    if (!target || (!target.selected && selected >= 12)) return
+    if (!target || (!target.selected && selected >= 8)) return
     update({ photos: draft.photos.map((photo) => photo.id === id ? { ...photo, selected: !photo.selected } : photo) })
   }
   return (
     <div className="editor-section">
-      <div className="editor-heading"><div><p>店家照片</p><h2>最多選 12 張最能代表店家的照片</h2></div><span className="count-badge">已選 {selected}／上限 12</span></div>
+      <div className="editor-heading"><div><p>品牌影像</p><h2>從 8 張 AI 影像挑出網站照片</h2></div><span className="count-badge">已選 {selected}／上限 8</span></div>
       <p className="editor-help">第一張選取的照片會成為網站主視覺。點擊照片即可顯示或隱藏。</p>
-      {draft.source === 'google_places' && <p className="google-source-note">即時取自 Google Maps，不會儲存在秒創網站。照片作者與原始來源會保留。</p>}
+      {draft.source === 'ai_generated' && <p className="google-source-note">這些圖片依你的產業與三個優勢生成；請在發布前確認人物、商品與場景符合品牌實際情況。</p>}
       <div className="photo-picker">
         {draft.photos.map((photo, index) => (
           <article key={photo.id}>
@@ -237,35 +212,11 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
               <span>{photo.selected ? <Check size={14} /> : index + 1}</span>
               {photo.selected && index === draft.photos.findIndex((item) => item.selected) && <em>主視覺</em>}
             </button>
-            {photo.sourceUrl && <div className="source-links"><a href={photo.authorUrl || photo.sourceUrl} target="_blank" rel="noreferrer">{photo.authorName || 'Google Maps'}</a><a href={photo.sourceUrl} target="_blank" rel="noreferrer">原始照片 ↗</a>{photo.reportUrl && <a href={photo.reportUrl} target="_blank" rel="noreferrer">回報</a>}</div>}
+            {photo.sourceUrl && <div className="source-links"><a href={photo.sourceUrl} target="_blank" rel="noreferrer">查看圖片來源 ↗</a></div>}
           </article>
         ))}
       </div>
-      <div className="upload-placeholder"><ImageIcon size={21} aria-hidden="true" /><div><strong>自行上傳照片</strong><span>正式串接儲存空間後開放；目前先使用商家來源照片。</span></div></div>
-    </div>
-  )
-}
-
-function ReviewEditor({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
-  function toggle(id: string) {
-    update({ reviews: draft.reviews.map((review) => review.id === id ? { ...review, selected: !review.selected } : review) })
-  }
-  return (
-    <div className="editor-section">
-      <div className="editor-heading"><div><p>Google 評論</p><h2>挑選要放上網站的真實評價</h2></div><span className="source-badge">保留原文</span></div>
-      <p className="editor-help">評論內容不能修改，只能選擇顯示或隱藏。網站會保留 Google 來源標示。</p>
-      {draft.source === 'google_places' && <p className="google-source-note">Google 評論依 Places API 預設的相關性排序顯示；作者與原始評論連結會保留。</p>}
-      <div className="review-picker">
-        {draft.reviews.map((review) => (
-          <article key={review.id}>
-            <button className={review.selected ? 'selected' : ''} type="button" onClick={() => toggle(review.id)} aria-pressed={review.selected}>
-              <span className="check-box">{review.selected && <Check size={14} />}</span>
-              <div><div className="review-meta"><strong>{review.author}</strong><span>{'★'.repeat(review.rating)}</span></div><p>{review.text}</p><small>{review.relativeTime}・Google 評論</small></div>
-            </button>
-            {review.sourceUrl && <div className="source-links"><a href={review.authorUrl || review.sourceUrl} target="_blank" rel="noreferrer">作者</a><a href={review.sourceUrl} target="_blank" rel="noreferrer">原始評論 ↗</a>{review.reportUrl && <a href={review.reportUrl} target="_blank" rel="noreferrer">回報</a>}</div>}
-          </article>
-        ))}
-      </div>
+      <div className="upload-placeholder"><ImageIcon size={21} aria-hidden="true" /><div><strong>自行上傳照片</strong><span>下一階段開放以品牌自有照片替換 AI 影像。</span></div></div>
     </div>
   )
 }
@@ -310,7 +261,7 @@ function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patc
   )
 }
 
-function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDraft; mode: 'demo' | 'live'; onChange: (draft: BusinessDraft) => void; onReady: () => void; onReset: () => void }) {
+function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDraft; mode: 'demo' | 'generated'; onChange: (draft: BusinessDraft) => void; onReady: () => void; onReset: () => void }) {
   const [tab, setTab] = useState<EditorTab>('template')
   const [viewport, setViewport] = useState<PreviewViewport>('desktop')
   const [studioView, setStudioView] = useState<StudioView>('edit')
@@ -324,7 +275,6 @@ function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDr
     { id: 'template', label: '版型', icon: <LayoutTemplate size={17} /> },
     { id: 'content', label: '內容', icon: <Pencil size={17} /> },
     { id: 'photos', label: '照片', icon: <ImageIcon size={17} /> },
-    { id: 'reviews', label: '評論', icon: <MessageSquareQuote size={17} /> },
   ]
 
   return (
@@ -332,7 +282,7 @@ function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDr
       <Header studio onReset={onReset} />
       <div className="studio-status">
         <div><span className="status-dot" /> {mode === 'demo' ? '草稿自動儲存' : '本次工作階段暫存'}</div>
-        <span>{mode === 'demo' ? '目前使用示範資料' : 'Google 商家資料即時載入・重新整理需再次匯入'}</span>
+        <span>{mode === 'demo' ? '目前使用示範資料' : 'AI 文案與影像已生成・重新整理需再次生成'}</span>
         <span>預覽剩餘 {formatRemainingTime(draft.expiresAt)}</span>
       </div>
       <div className="mobile-studio-switch" aria-label="工作區顯示">
@@ -347,9 +297,8 @@ function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDr
           </nav>
           <div className="panel-scroll">
             {tab === 'template' && <TemplateEditor draft={draft} update={update} />}
-            {tab === 'content' && <ContentEditor draft={draft} update={update} onRegenerate={() => onChange(regenerateCopy(draft))} />}
+            {tab === 'content' && <ContentEditor draft={draft} update={update} />}
             {tab === 'photos' && <PhotoEditor draft={draft} update={update} />}
-            {tab === 'reviews' && <ReviewEditor draft={draft} update={update} />}
           </div>
         </aside>
 
@@ -384,12 +333,12 @@ function Ready({ draft, onBack, onReset }: { draft: BusinessDraft; onBack: () =>
         <div className="ready-copy">
           <div className="ready-title-row"><span className="ready-check"><Check size={22} /></span><p className="eyebrow">網站草稿已準備完成</p></div>
           <h1>下一步，替「{draft.name}」選一個正式網址</h1>
-          <p>你的內容、照片與「{templateNames[draft.template]}」版型都已儲存。lihiDomain 串接完成後，這裡會直接顯示可購買的網域名稱與價格。</p>
+          <p>你的內容、影像與「{templateNames[draft.template]}」版型已準備完成。正式發布前會先儲存 AI 影像；lihiDomain 串接完成後，這裡會顯示可購買的網域名稱與價格。</p>
           <div className="ready-actions"><button className="primary-button" type="button" disabled>搜尋可用網域（下一階段串接）</button><button className="secondary-button" type="button" onClick={() => openPreview(draft)}>再次查看網站 <ExternalLink size={15} /></button></div>
         </div>
         <aside className="handoff-card">
           <p>已完成</p>
-          <ul><li><Check size={15} /> 商家資料與網站文案</li><li><Check size={15} /> {draft.photos.filter((photo) => photo.selected).length} 張店家照片</li><li><Check size={15} /> {draft.reviews.filter((review) => review.selected).length} 則 Google 評論</li><li><Check size={15} /> {templateNames[draft.template]}版型</li><li><Check size={15} /> 48 小時預覽草稿</li></ul>
+          <ul><li><Check size={15} /> 品牌定位與網站文案</li><li><Check size={15} /> {draft.photos.filter((photo) => photo.selected).length} 張品牌影像</li><li><Check size={15} /> 三個品牌優勢</li><li><Check size={15} /> {templateNames[draft.template]}版型</li><li><Check size={15} /> 48 小時預覽草稿</li></ul>
           <div><span>待串接</span><strong>lihiDomain 帳號、網域搜尋、結帳與部署</strong></div>
         </aside>
       </main>
@@ -405,33 +354,36 @@ export default function App() {
   }, [demoStage])
   const [stage, setStage] = useState<AppStage>(demoStage === 'ready' ? 'ready' : existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
-  const [mode, setMode] = useState<'demo' | 'live'>('demo')
+  const [mode, setMode] = useState<'demo' | 'generated'>('demo')
   const [importStep, setImportStep] = useState(0)
   const [importError, setImportError] = useState('')
 
   useEffect(() => {
-    if (draft?.source === 'google_places') clearDraft()
+    if (draft?.source === 'ai_generated') clearDraft()
     else if (draft) saveDraft(draft)
   }, [draft])
 
-  async function startImport(sourceUrl: string) {
+  async function startGeneration(brief: BrandBrief) {
     setImportError('')
     setStage('importing')
     setImportStep(0)
-    const timer = window.setInterval(() => setImportStep((current) => Math.min(current + 1, importSteps.length - 1)), 520)
     try {
-      const result = await importBusiness(sourceUrl)
-      await new Promise((resolve) => window.setTimeout(resolve, 1250))
+      const result = await generateBusiness(brief, (finishedImages) => setImportStep(finishedImages === 0 ? 1 : finishedImages === 8 ? 3 : 2))
       setDraft(result.draft)
       setMode(result.mode)
       setStage('studio')
     } catch (error) {
       setDraft(null)
-      setImportError(error instanceof Error ? error.message : '匯入商家資料時發生錯誤，請稍後再試。')
+      setImportError(error instanceof Error ? error.message : '生成網站時發生錯誤，請稍後再試。')
       setStage('landing')
-    } finally {
-      window.clearInterval(timer)
     }
+  }
+
+  function useDemo() {
+    setDraft(createDemoBusiness())
+    setMode('demo')
+    setImportError('')
+    setStage('studio')
   }
 
   function reset() {
@@ -444,5 +396,5 @@ export default function App() {
   if (stage === 'importing') return <Importing activeStep={importStep} />
   if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReady={() => setStage('ready')} onReset={reset} />
   if (stage === 'ready' && draft) return <Ready draft={draft} onBack={() => setStage('studio')} onReset={reset} />
-  return <Landing onImport={startImport} initialError={importError} />
+  return <Landing onGenerate={startGeneration} onDemo={useDemo} initialError={importError} />
 }
