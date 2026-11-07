@@ -203,8 +203,8 @@ export async function deployToEmDash(input: EmDashDeployInput, env: Env, fetcher
 
 export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetcher): Promise<GeneratedContent> {
   if (!env.OPENROUTER_API_KEY) throw new ApiError(503, 'SERVICE_NOT_CONFIGURED', 'AI 生成服務尚未完成設定。')
-  const primary = env.OPENROUTER_TEXT_MODEL || 'qwen/qwen3.5-plus-02-15'
-  const fallback = env.OPENROUTER_FALLBACK_MODEL?.trim()
+  const primary = env.OPENROUTER_TEXT_MODEL?.trim() || 'openai/gpt-5.6-luna'
+  const fallback = env.OPENROUTER_FALLBACK_MODEL?.trim() || 'anthropic/claude-haiku-5.5'
   const facts = [
     `產業：${brief.industry}`,
     `品牌：${brief.brandName}`,
@@ -218,7 +218,7 @@ export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetc
       Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': env.PUBLIC_APP_URL || 'https://lihi.io/tools/',
-      'X-OpenRouter-Title': '秒創網站',
+      'X-OpenRouter-Title': 'Miaochuang Site',
     },
     body: JSON.stringify({
       model: primary,
@@ -226,25 +226,44 @@ export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetc
       messages: [
         {
           role: 'system',
-          content: '你是台灣在地服務業網站的資深繁中編輯。只能改寫使用者提供的事實。不得新增價格、折扣、地址、年資、證照、獎項、客戶數、療效、保證或未提供的服務。缺少的資料不要補。',
+          content: '你是台灣在地服務業網站的資深繁中編輯。只能改寫使用者提供的事實。不得新增價格、折扣、地址、年資、證照、獎項、客戶數、療效、保證或未提供的服務。缺少的資料不要補。只能輸出符合指定 schema 的 JSON。',
         },
         {
           role: 'user',
-          content: `${facts}\n請產出一個 20 字內主標題、80–140 字品牌介紹，以及三個依原始優勢逐項改寫的短標題。`,
+          content: `${facts}\n請以 JSON 格式產出一個 20 字內主標題、80–140 字品牌介紹，以及三個依原始優勢逐項改寫的短標題。`,
         },
       ],
       response_format: { type: 'json_schema', json_schema: { name: 'brand_site_content', strict: true, schema: contentSchema } },
       provider: { require_parameters: true },
-      temperature: 0.5,
-      max_tokens: 900,
+      reasoning: { effort: 'none' },
+      max_tokens: 1_200,
     }),
   }).catch(() => null)
 
   if (!response) throw new ApiError(502, 'UPSTREAM_UNAVAILABLE', 'AI 服務目前無法連線，請稍後再試。')
-  if (!response.ok) throw new ApiError(502, 'UPSTREAM_ERROR', 'AI 服務目前忙碌或額度不足，請稍後再試。')
-  const payload = await response.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }> } | null
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => null) as { error?: { code?: string | number; message?: string } } | null
+    console.error('OpenRouter request failed', {
+      status: response.status,
+      code: errorPayload?.error?.code || 'UNKNOWN',
+      message: errorPayload?.error?.message || 'Unknown OpenRouter error',
+    })
+    throw new ApiError(502, 'UPSTREAM_ERROR', 'AI 服務目前忙碌或額度不足，請稍後再試。')
+  }
+  const payload = await response.json().catch(() => null) as {
+    choices?: Array<{ finish_reason?: string; message?: { content?: string; reasoning?: string } }>
+    usage?: { completion_tokens?: number; completion_tokens_details?: { reasoning_tokens?: number } }
+  } | null
   const output = payload?.choices?.[0]?.message?.content
-  if (!output) throw new ApiError(502, 'INVALID_AI_RESPONSE', 'AI 沒有回傳完整網站文案，請再試一次。')
+  if (!output) {
+    console.error('OpenRouter returned no visible content', {
+      finishReason: payload?.choices?.[0]?.finish_reason || 'UNKNOWN',
+      completionTokens: payload?.usage?.completion_tokens || 0,
+      reasoningTokens: payload?.usage?.completion_tokens_details?.reasoning_tokens || 0,
+      reasoningLength: payload?.choices?.[0]?.message?.reasoning?.length || 0,
+    })
+    throw new ApiError(502, 'INVALID_AI_RESPONSE', 'AI 沒有回傳完整網站文案，請再試一次。')
+  }
   let decoded: unknown
   try {
     decoded = JSON.parse(output)

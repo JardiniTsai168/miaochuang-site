@@ -28,14 +28,31 @@ describe('OpenRouter generation Worker', () => {
       expect(request.models).toEqual(['primary/model', 'fallback/model'])
       expect(request.route).toBe('fallback')
       expect(request.response_format.json_schema.strict).toBe(true)
+      expect(request.reasoning).toEqual({ effort: 'none' })
+      expect(request.max_tokens).toBe(1_200)
+      expect(request).not.toHaveProperty('temperature')
       expect(request.messages[1].content).toContain('剪髮、染髮、頭皮護理')
       expect(request.messages[0].content).toContain('不得新增價格')
       return Response.json({ choices: [{ message: { content: JSON.stringify(content) } }] })
     })
     await expect(generateContent(brief, env, fetcher as typeof fetch)).resolves.toEqual(content)
     expect(fetcher).toHaveBeenCalledWith('https://openrouter.ai/api/v1/chat/completions', expect.objectContaining({
-      headers: expect.objectContaining({ 'HTTP-Referer': 'https://lihi.io/tools/site-builder/', 'X-OpenRouter-Title': '秒創網站' }),
+      headers: expect.objectContaining({ 'HTTP-Referer': 'https://lihi.io/tools/site-builder/', 'X-OpenRouter-Title': 'Miaochuang Site' }),
     }))
+  })
+
+  it('uses production-ready default and fallback models', async () => {
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body))
+      expect(request.model).toBe('openai/gpt-5.6-luna')
+      expect(request.models).toEqual(['openai/gpt-5.6-luna', 'anthropic/claude-haiku-5.5'])
+      return Response.json({ choices: [{ message: { content: JSON.stringify(content) } }] })
+    })
+    await expect(generateContent(brief, {
+      ...env,
+      OPENROUTER_TEXT_MODEL: undefined,
+      OPENROUTER_FALLBACK_MODEL: undefined,
+    }, fetcher as typeof fetch)).resolves.toEqual(content)
   })
 
   it('requires at least one offering in addition to three advantages', async () => {
