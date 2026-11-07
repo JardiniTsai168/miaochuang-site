@@ -13,7 +13,7 @@
     }
   ],
   "vars": {
-    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://jardinitsai168.github.io",
+    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://jardinitsai168.github.io,https://miaochuang-v2.monster7405.workers.dev",
     "EMDASH_SITE_URL": "https://miaochuang-emdash-host.monster7405.workers.dev",
     "EMDASH_PUBLIC_URL": "https://miaochuang-emdash-host.monster7405.workers.dev",
     "EMDASH_COLLECTION": "sites",
