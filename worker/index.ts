@@ -1,8 +1,15 @@
-export interface Env {
-  OPENAI_API_KEY: string
-  OPENAI_TEXT_MODEL?: string
-  OPENAI_IMAGE_MODEL?: string
+export type Env = {
+  OPENROUTER_API_KEY: string
+  OPENROUTER_TEXT_MODEL?: string
+  OPENROUTER_FALLBACK_MODEL?: string
+  PUBLIC_APP_URL?: string
   ALLOWED_ORIGINS?: string
+  EMDASH_SITE_URL?: string
+  EMDASH_PUBLIC_URL?: string
+  EMDASH_API_TOKEN?: string
+  EMDASH_COLLECTION?: string
+  EMDASH_PUBLIC_PATH?: string
+  EMDASH_SERVICE?: { fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> }
 }
 
 type Fetcher = typeof fetch
@@ -11,143 +18,255 @@ type BrandBrief = {
   industry: string
   brandName: string
   advantages: [string, string, string]
+  offerings: [string, string, string]
   hours?: string
 }
 
-class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string) { super(message) }
+type GeneratedContent = {
+  tagline: string
+  description: string
+  advantages: [string, string, string]
 }
 
-function allowedOrigin(request: Request, env: Env): string | null {
-  const origin = request.headers.get('origin')
-  if (!origin) return null
-  const allowed = new Set((env.ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean))
-  return allowed.has(origin) ? origin : null
+type EmDashDeployInput = {
+  name: string
+  template: string
+  expiresAt: number
+  html: string
+  deployment?: { entryId: string; slug: string }
 }
 
-function corsHeaders(request: Request, env: Env): HeadersInit {
-  const origin = allowedOrigin(request, env)
-  return {
-    ...(origin ? { 'Access-Control-Allow-Origin': origin } : {}),
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Cache-Control': 'no-store',
-    Vary: 'Origin',
+type EmDashItem = { id: string; slug: string | null }
+
+export class ApiError extends Error {
+  constructor(public status: number, public code: string, message: string) {
+    super(message)
   }
 }
 
-function json(request: Request, env: Env, value: unknown, status = 200): Response {
-  return Response.json(value, { status, headers: corsHeaders(request, env) })
-}
-
-function clean(value: unknown, max: number): string {
+function clean(value: unknown, max = 160): string {
   return typeof value === 'string' ? value.trim().slice(0, max) : ''
 }
 
 function parseBrief(value: unknown): BrandBrief {
-  const body = value && typeof value === 'object' ? value as Record<string, unknown> : {}
-  const advantages = Array.isArray(body.advantages) ? body.advantages.map((item) => clean(item, 100)) : []
+  const body = (value || {}) as Record<string, unknown>
+  const rawAdvantages = Array.isArray(body.advantages) ? body.advantages : []
+  const rawOfferings = Array.isArray(body.offerings) ? body.offerings : []
   const brief: BrandBrief = {
     industry: clean(body.industry, 80),
     brandName: clean(body.brandName, 80),
-    advantages: [advantages[0] || '', advantages[1] || '', advantages[2] || ''],
+    advantages: [clean(rawAdvantages[0]), clean(rawAdvantages[1]), clean(rawAdvantages[2])],
+    offerings: [clean(rawOfferings[0]), clean(rawOfferings[1]), clean(rawOfferings[2])],
     hours: clean(body.hours, 500),
   }
-  if (!brief.industry || !brief.brandName || brief.advantages.some((item) => !item)) {
-    throw new ApiError(400, 'INVALID_BRIEF', '請完整填寫產業、品牌名稱與三個優點。')
+  if (!brief.industry || !brief.brandName || brief.advantages.some((item) => !item) || !brief.offerings[0]) {
+    throw new ApiError(400, 'INVALID_BRIEF', '請完整填寫產業、品牌名稱、三個優勢與至少一項主要服務。')
   }
   return brief
 }
 
-async function openAI<T>(path: string, body: unknown, env: Env, fetcher: Fetcher): Promise<T> {
-  const response = await fetcher(`https://api.openai.com/v1${path}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '')
-    console.error('OpenAI request failed', response.status, detail.slice(0, 300))
-    if (response.status === 429) throw new ApiError(429, 'AI_RATE_LIMITED', 'AI 生成服務目前忙碌，請稍後再試。')
-    throw new ApiError(502, 'AI_GENERATION_FAILED', 'AI 暫時無法完成生成，請稍後再試。')
-  }
-  return response.json() as Promise<T>
+function allowedOrigin(request: Request, env: Env): boolean {
+  const origin = request.headers.get('origin')
+  if (!origin) return true
+  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean)
+  return allowed.length === 0 || allowed.includes(origin)
 }
 
-function outputText(response: { output?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }> }): string {
-  for (const item of response.output || []) {
-    for (const content of item.content || []) if (content.type === 'output_text' && content.text) return content.text
+function corsHeaders(request: Request, env: Env): HeadersInit {
+  const origin = request.headers.get('origin') || ''
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin(request, env) && origin ? origin : 'null',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    Vary: 'Origin',
   }
-  throw new ApiError(502, 'INVALID_AI_RESPONSE', 'AI 回傳的文案格式不正確，請再試一次。')
+}
+
+function json(request: Request, env: Env, body: unknown, status = 200): Response {
+  return Response.json(body, { status, headers: corsHeaders(request, env) })
 }
 
 const contentSchema = {
   type: 'object',
   properties: {
-    tagline: { type: 'string' },
-    description: { type: 'string' },
-    services: { type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 3 },
-    photoPrompts: { type: 'array', items: { type: 'string' }, minItems: 8, maxItems: 8 },
-    photoAlts: { type: 'array', items: { type: 'string' }, minItems: 8, maxItems: 8 },
+    tagline: { type: 'string', description: '20 個繁體中文字以內的網站主標題' },
+    description: { type: 'string', description: '80 到 140 個繁體中文字的品牌介紹' },
+    advantages: {
+      type: 'array',
+      description: '依使用者三個優勢分別改寫的短標題，不得新增事實',
+      items: { type: 'string' },
+      minItems: 3,
+      maxItems: 3,
+    },
   },
-  required: ['tagline', 'description', 'services', 'photoPrompts', 'photoAlts'],
+  required: ['tagline', 'description', 'advantages'],
   additionalProperties: false,
 }
 
-export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetcher): Promise<unknown> {
-  const facts = `產業：${brief.industry}\n品牌：${brief.brandName}\n三個優勢：${brief.advantages.join('、')}\n營業時間：${brief.hours || '未提供'}`
-  const roles = '1 品牌主視覺、2 主理人工作情境、3 顧客體驗、4 核心產品或服務、5 製作過程、6 空間全景、7 細節特寫、8 門面或品牌識別'
-  const response = await openAI<{ output?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }> }>('/responses', {
-    model: env.OPENAI_TEXT_MODEL || 'gpt-6-astra',
-    input: [
-      { role: 'system', content: '你是台灣品牌網站的資深文案與 art director。只能使用使用者提供的事實，不得捏造地址、獎項、價格、創立年份或產品。產出繁體中文文案；影像 prompt 使用英文，要求商業攝影、自然人物與一致 art direction，禁止文字、logo、水印。' },
-      { role: 'user', content: `${facts}\n請產出：20 字內主標題、80–140 字介紹、三個由優勢改寫的服務標題，以及 8 張網站照片的英文 prompt 與繁中 alt。照片角色固定為：${roles}。每個 prompt 都要重述產業、品牌調性與對應角色，人物以台灣在地情境為主。` },
-    ],
-    text: { format: { type: 'json_schema', name: 'brand_site_content', strict: true, schema: contentSchema } },
-  }, env, fetcher)
-  return JSON.parse(outputText(response))
+function parseGenerated(value: unknown): GeneratedContent {
+  const content = (value || {}) as Record<string, unknown>
+  const advantages = Array.isArray(content.advantages) ? content.advantages.map((item) => clean(item, 80)) : []
+  const generated: GeneratedContent = {
+    tagline: clean(content.tagline, 80),
+    description: clean(content.description, 600),
+    advantages: [advantages[0] || '', advantages[1] || '', advantages[2] || ''],
+  }
+  if (!generated.tagline || !generated.description || generated.advantages.some((item) => !item)) {
+    throw new ApiError(502, 'INVALID_AI_RESPONSE', 'AI 沒有回傳完整網站文案，請再試一次。')
+  }
+  return generated
 }
 
-async function safetyIdentifier(brandName: string, industry: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${industry}:${brandName}`))
-  return `brand-${Array.from(new Uint8Array(digest)).slice(0, 12).map((byte) => byte.toString(16).padStart(2, '0')).join('')}`
+function parseDeployInput(value: unknown): EmDashDeployInput {
+  const body = (value || {}) as Record<string, unknown>
+  const rawDeployment = body.deployment && typeof body.deployment === 'object' ? body.deployment as Record<string, unknown> : undefined
+  const deployment = rawDeployment ? { entryId: clean(rawDeployment.entryId, 120), slug: clean(rawDeployment.slug, 120) } : undefined
+  const input: EmDashDeployInput = {
+    name: clean(body.name, 80),
+    template: clean(body.template, 40),
+    expiresAt: typeof body.expiresAt === 'number' ? body.expiresAt : 0,
+    html: typeof body.html === 'string' ? body.html : '',
+    ...(deployment?.entryId && /^[a-z0-9-]+$/iu.test(deployment.slug) ? { deployment } : {}),
+  }
+  if (!input.name || !input.template || !input.expiresAt || !input.html || input.html.length > 2_000_000) {
+    throw new ApiError(400, 'INVALID_DEPLOYMENT', '部署資料不完整或網站內容超過大小限制。')
+  }
+  return input
 }
 
-export async function generateImage(body: Record<string, unknown>, env: Env, fetcher: Fetcher): Promise<string> {
-  const prompt = clean(body.prompt, 5000)
-  const brandName = clean(body.brandName, 80)
-  const industry = clean(body.industry, 80)
-  if (!prompt || !brandName || !industry) throw new ApiError(400, 'INVALID_IMAGE_REQUEST', '缺少品牌影像生成資料。')
-  const response = await openAI<{ data?: Array<{ b64_json?: string }>; output_format?: string }>('/images/generations', {
-    model: env.OPENAI_IMAGE_MODEL || 'gpt-image-2.5-flare',
-    prompt,
-    n: 1,
-    size: '1536x1024',
-    quality: 'low',
-    output_format: 'jpeg',
-    output_compression: 82,
-    background: 'opaque',
-    safety_identifier: await safetyIdentifier(brandName, industry),
+function emdashBaseUrl(value: string | undefined, variable: string): string {
+  if (!value) throw new ApiError(503, 'EMDASH_NOT_CONFIGURED', `EmDash 尚未設定 ${variable}。`)
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' && url.hostname !== 'localhost') throw new Error('unsafe protocol')
+    return url.toString().replace(/\/$/u, '')
+  } catch {
+    throw new ApiError(503, 'EMDASH_NOT_CONFIGURED', `EmDash 的 ${variable} 設定不正確。`)
+  }
+}
+
+async function emdashRequest<T>(path: string, init: RequestInit, env: Env, fetcher: Fetcher): Promise<T> {
+  if (!env.EMDASH_API_TOKEN) throw new ApiError(503, 'EMDASH_NOT_CONFIGURED', 'EmDash API Token 尚未設定。')
+  const targetUrl = `${emdashBaseUrl(env.EMDASH_SITE_URL, 'Site URL')}${path}`
+  const response = await (env.EMDASH_SERVICE ? env.EMDASH_SERVICE.fetch(targetUrl, {
+    ...init,
+    headers: { Authorization: `Bearer ${env.EMDASH_API_TOKEN}`, 'Content-Type': 'application/json', ...init.headers },
+  }) : fetcher(targetUrl, {
+    ...init,
+    headers: { Authorization: `Bearer ${env.EMDASH_API_TOKEN}`, 'Content-Type': 'application/json', ...init.headers },
+  })).catch(() => null)
+  if (!response) throw new ApiError(502, 'EMDASH_UNAVAILABLE', '目前無法連線到 EmDash。')
+  const responseText = await response.text()
+  const payload = (() => {
+    try {
+      return JSON.parse(responseText) as { success?: boolean; data?: T; error?: { code?: string; message?: string } }
+    } catch {
+      return null
+    }
+  })()
+  if (!response.ok || !payload?.success || !payload.data) {
+    console.error('EmDash request failed', {
+      path,
+      status: response.status,
+      code: payload?.error?.code || 'UNKNOWN',
+      message: payload?.error?.message || 'Unknown EmDash error',
+    })
+    throw new ApiError(502, 'EMDASH_ERROR', 'EmDash 無法完成部署，請檢查站台與 Token 設定。')
+  }
+  return payload.data
+}
+
+export async function deployToEmDash(input: EmDashDeployInput, env: Env, fetcher: Fetcher): Promise<{ entryId: string; slug: string; url: string; deployedAt: number }> {
+  const collection = clean(env.EMDASH_COLLECTION || 'sites', 60)
+  if (!/^[a-z][a-z0-9_-]*$/u.test(collection)) throw new ApiError(503, 'EMDASH_NOT_CONFIGURED', 'EmDash Collection 設定不正確。')
+  const slug = input.deployment?.slug || `site-${crypto.randomUUID().slice(0, 8)}`
+  const data = { name: input.name, template: input.template, html: input.html, expires_at: new Date(input.expiresAt).toISOString() }
+  let item: EmDashItem
+  if (input.deployment) {
+    const result = await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(input.deployment.entryId)}`, {
+      method: 'PUT', body: JSON.stringify({ slug, data }),
+    }, env, fetcher)
+    item = result.item
+  } else {
+    const result = await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}`, {
+      method: 'POST', body: JSON.stringify({ slug, status: 'draft', data }),
+    }, env, fetcher)
+    item = result.item
+  }
+  await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(item.id)}/publish`, {
+    method: 'POST', body: '{}',
   }, env, fetcher)
-  const encoded = response.data?.[0]?.b64_json
-  if (!encoded) throw new ApiError(502, 'INVALID_IMAGE_RESPONSE', 'AI 沒有回傳完整影像，請再試一次。')
-  return `data:image/${response.output_format || 'jpeg'};base64,${encoded}`
+  const publicUrl = emdashBaseUrl(env.EMDASH_PUBLIC_URL || env.EMDASH_SITE_URL, 'Public URL')
+  const publicPath = `/${(env.EMDASH_PUBLIC_PATH || 's').replace(/^\/+|\/+$/gu, '')}`
+  return { entryId: item.id, slug, url: `${publicUrl}${publicPath}/${encodeURIComponent(slug)}`, deployedAt: Date.now() }
+}
+
+export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetcher): Promise<GeneratedContent> {
+  if (!env.OPENROUTER_API_KEY) throw new ApiError(503, 'SERVICE_NOT_CONFIGURED', 'AI 生成服務尚未完成設定。')
+  const primary = env.OPENROUTER_TEXT_MODEL || 'qwen/qwen3.5-plus-02-15'
+  const fallback = env.OPENROUTER_FALLBACK_MODEL?.trim()
+  const facts = [
+    `產業：${brief.industry}`,
+    `品牌：${brief.brandName}`,
+    `三個優勢：${brief.advantages.join('、')}`,
+    `主要服務／商品：${brief.offerings.filter(Boolean).join('、')}`,
+    `營業時間：${brief.hours || '未提供'}`,
+  ].join('\n')
+  const response = await fetcher('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': env.PUBLIC_APP_URL || 'https://lihi.io/tools/',
+      'X-OpenRouter-Title': '秒創網站',
+    },
+    body: JSON.stringify({
+      model: primary,
+      ...(fallback ? { models: [primary, fallback], route: 'fallback' } : {}),
+      messages: [
+        {
+          role: 'system',
+          content: '你是台灣在地服務業網站的資深繁中編輯。只能改寫使用者提供的事實。不得新增價格、折扣、地址、年資、證照、獎項、客戶數、療效、保證或未提供的服務。缺少的資料不要補。',
+        },
+        {
+          role: 'user',
+          content: `${facts}\n請產出一個 20 字內主標題、80–140 字品牌介紹，以及三個依原始優勢逐項改寫的短標題。`,
+        },
+      ],
+      response_format: { type: 'json_schema', json_schema: { name: 'brand_site_content', strict: true, schema: contentSchema } },
+      provider: { require_parameters: true },
+      temperature: 0.5,
+      max_tokens: 900,
+    }),
+  }).catch(() => null)
+
+  if (!response) throw new ApiError(502, 'UPSTREAM_UNAVAILABLE', 'AI 服務目前無法連線，請稍後再試。')
+  if (!response.ok) throw new ApiError(502, 'UPSTREAM_ERROR', 'AI 服務目前忙碌或額度不足，請稍後再試。')
+  const payload = await response.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }> } | null
+  const output = payload?.choices?.[0]?.message?.content
+  if (!output) throw new ApiError(502, 'INVALID_AI_RESPONSE', 'AI 沒有回傳完整網站文案，請再試一次。')
+  let decoded: unknown
+  try {
+    decoded = JSON.parse(output)
+  } catch {
+    throw new ApiError(502, 'INVALID_AI_RESPONSE', 'AI 回傳格式不正確，請再試一次。')
+  }
+  return parseGenerated(decoded)
 }
 
 export async function handleRequest(request: Request, env: Env, fetcher: Fetcher = fetch): Promise<Response> {
   try {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) })
-    if (!env.OPENAI_API_KEY) throw new ApiError(503, 'SERVICE_NOT_CONFIGURED', 'AI 生成服務尚未完成設定。')
     const origin = request.headers.get('origin')
     if (origin && !allowedOrigin(request, env)) throw new ApiError(403, 'ORIGIN_NOT_ALLOWED', '這個網站來源不允許使用生成服務。')
     const url = new URL(request.url)
-    if (request.method === 'GET' && url.pathname === '/health') return json(request, env, { ok: true })
+    if (request.method === 'GET' && url.pathname === '/health') return json(request, env, { ok: true, provider: 'openrouter' })
     const body = await request.json().catch(() => null)
     if (request.method === 'POST' && url.pathname === '/api/generate-content') {
       return json(request, env, await generateContent(parseBrief(body), env, fetcher))
     }
-    if (request.method === 'POST' && url.pathname === '/api/generate-image') {
-      return json(request, env, { dataUrl: await generateImage((body || {}) as Record<string, unknown>, env, fetcher) })
+    if (request.method === 'POST' && url.pathname === '/api/deploy-emdash') {
+      return json(request, env, await deployToEmDash(parseDeployInput(body), env, fetcher))
     }
     throw new ApiError(404, 'NOT_FOUND', '找不到這個 API 路徑。')
   } catch (error) {

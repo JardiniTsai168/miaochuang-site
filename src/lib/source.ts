@@ -1,13 +1,13 @@
-import type { BrandBrief, BusinessDraft, BusinessHours, BusinessPhoto, ImportResult } from '../types'
+import { createCampaignPhotos } from '../data/demoBusiness'
+import type { BrandBrief, BusinessDraft, BusinessHours, ImportResult } from '../types'
 
 const API_BASE_URL = (import.meta.env.VITE_GENERATION_API_BASE_URL || '').replace(/\/$/u, '')
+const DAY = 24 * 60 * 60 * 1000
 
 type GeneratedContent = {
   tagline: string
   description: string
-  services: string[]
-  photoPrompts: string[]
-  photoAlts: string[]
+  advantages: [string, string, string]
 }
 
 export class GenerationError extends Error {
@@ -38,50 +38,25 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 export function validateBrief(brief: BrandBrief): string {
-  if (!brief.industry.trim()) return '請輸入產業類型。'
-  if (!brief.brandName.trim()) return '請輸入品牌／網站名稱。'
+  if (!brief.industry.trim()) return '請選擇產業類型。'
+  if (!brief.brandName.trim()) return '請輸入品牌／店家名稱。'
   if (brief.advantages.some((item) => !item.trim())) return '請完整填寫三個優點或優勢。'
+  if (!brief.offerings[0].trim()) return '請至少填寫一項主要服務或商品。'
   return ''
 }
 
-export async function generateBusiness(brief: BrandBrief, onProgress?: (finishedImages: number) => void): Promise<ImportResult> {
+export async function generateBusiness(brief: BrandBrief): Promise<ImportResult> {
   const validationError = validateBrief(brief)
   if (validationError) throw new GenerationError(validationError, 'INVALID_BRIEF')
 
   const content = await apiPost<GeneratedContent>('/api/generate-content', brief)
-  if (content.photoPrompts.length !== 8 || content.photoAlts.length !== 8) {
-    throw new GenerationError('AI 沒有產出完整的 8 張品牌影像規劃，請再試一次。', 'INCOMPLETE_IMAGE_PLAN')
+  if (!Array.isArray(content.advantages) || content.advantages.length !== 3) {
+    throw new GenerationError('AI 沒有產出完整的品牌優勢文案，請再試一次。', 'INCOMPLETE_CONTENT')
   }
-  onProgress?.(0)
-
-  const photos: BusinessPhoto[] = new Array(8)
-  let cursor = 0
-  let finished = 0
-  async function generateNext() {
-    while (cursor < content.photoPrompts.length) {
-      const index = cursor++
-      const image = await apiPost<{ dataUrl: string }>('/api/generate-image', {
-        prompt: content.photoPrompts[index],
-        brandName: brief.brandName,
-        industry: brief.industry,
-        index,
-      })
-      photos[index] = {
-        id: `generated-photo-${index + 1}`,
-        url: image.dataUrl,
-        alt: content.photoAlts[index],
-        selected: index < 5,
-        source: 'ai_generated',
-      }
-      finished += 1
-      onProgress?.(finished)
-    }
-  }
-  await Promise.all([generateNext(), generateNext()])
 
   const now = Date.now()
   const draft: BusinessDraft = {
-    source: 'ai_generated',
+    source: 'generated',
     name: brief.brandName.trim(),
     category: brief.industry.trim(),
     tagline: content.tagline,
@@ -92,15 +67,16 @@ export async function generateBusiness(brief: BrandBrief, onProgress?: (finished
     lineUrl: '',
     instagramUrl: '',
     videoUrl: '',
-    services: content.services.slice(0, 3),
+    services: content.advantages,
+    offerings: brief.offerings.map((item) => item.trim()).filter(Boolean),
     hours: parseHours(brief.hours),
-    photos,
+    photos: createCampaignPhotos(Math.abs([...brief.industry].reduce((sum, char) => sum + char.charCodeAt(0), 0))),
     reviews: [],
     template: 'editorial',
     accent: '#B85D3F',
     regenerationCount: 0,
     createdAt: now,
-    expiresAt: now + 48 * 60 * 60 * 1000,
+    expiresAt: now + 7 * DAY,
   }
   return { mode: 'generated', draft }
 }

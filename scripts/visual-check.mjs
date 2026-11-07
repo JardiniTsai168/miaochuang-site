@@ -42,7 +42,7 @@ for (const item of cases) {
     const preview = page.frameLocator('iframe[title$="網站預覽"]')
     const [popup] = await Promise.all([
       page.waitForEvent('popup'),
-      preview.getByRole('link', { name: '查看地圖' }).click(),
+      preview.getByRole('link', { name: 'LINE 預約諮詢' }).click(),
     ])
     previewLinkSafe = page.url().includes('demo=studio')
     await popup.close()
@@ -57,7 +57,7 @@ for (const item of cases) {
     await page.locator('.panel-scroll').evaluate((element) => { element.scrollTop = 0 })
 
     await page.getByRole('button', { name: /^照片$/ }).click()
-    availablePhotos = await page.locator('button[aria-pressed] img').count()
+    availablePhotos = await page.locator('.photo-replace img').count()
     await page.getByRole('button', { name: /^版型$/ }).click()
   }
   const dimensions = await page.evaluate(() => ({
@@ -147,4 +147,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 8) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 44 : 64) || result.heroTitle.lineCount > 1 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 52 : 64) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 44 : 64) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 52 : 64) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1

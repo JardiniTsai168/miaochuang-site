@@ -2,10 +2,11 @@ export type TemplateId = 'editorial' | 'vivid' | 'calm' | 'compact' | 'mosaic'
 
 export type BusinessPhoto = {
   id: string
+  role: 'hero' | 'people' | 'service' | 'space' | 'detail'
   url: string
   alt: string
   selected: boolean
-  source?: 'ai_generated' | 'merchant' | 'demo'
+  source?: 'library' | 'merchant' | 'stock' | 'demo'
   sourceUrl?: string
   authorName?: string
   authorUrl?: string
@@ -34,7 +35,7 @@ export type BusinessHours = {
 
 export type BusinessDraft = {
   sourceUrl?: string
-  source?: 'ai_generated' | 'merchant' | 'demo'
+  source?: 'generated' | 'merchant' | 'demo'
   name: string
   category: string
   tagline: string
@@ -46,6 +47,7 @@ export type BusinessDraft = {
   instagramUrl: string
   videoUrl: string
   services: string[]
+  offerings: string[]
   hours: BusinessHours[]
   photos: BusinessPhoto[]
   reviews: BusinessReview[]
@@ -54,6 +56,12 @@ export type BusinessDraft = {
   regenerationCount: number
   createdAt: number
   expiresAt: number
+  emdash?: {
+    entryId: string
+    slug: string
+    url: string
+    deployedAt: number
+  }
 }
 
 export type ImportResult = {
@@ -65,6 +73,7 @@ export type BrandBrief = {
   industry: string
   brandName: string
   advantages: [string, string, string]
+  offerings: [string, string, string]
   hours?: string
 }
 

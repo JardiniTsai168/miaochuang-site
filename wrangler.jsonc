@@ -6,7 +6,17 @@
   "observability": {
     "enabled": true
   },
+  "services": [
+    {
+      "binding": "EMDASH_SERVICE",
+      "service": "miaochuang-emdash-host"
+    }
+  ],
   "vars": {
-    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://jardinitsai168.github.io"
+    "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://jardinitsai168.github.io",
+    "EMDASH_SITE_URL": "https://miaochuang-emdash-host.monster7405.workers.dev",
+    "EMDASH_PUBLIC_URL": "https://miaochuang-emdash-host.monster7405.workers.dev",
+    "EMDASH_COLLECTION": "sites",
+    "EMDASH_PUBLIC_PATH": "s"
   }
 }

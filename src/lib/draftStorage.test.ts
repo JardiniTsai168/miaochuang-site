@@ -22,5 +22,6 @@ describe('draft storage', () => {
     clearDraft()
     expect(loadDraft()).toBeNull()
     expect(formatRemainingTime(3_600_001, 1)).toBe('1 小時')
+    expect(formatRemainingTime(3 * 24 * 60 * 60 * 1000 + 1, 1)).toBe('3 天')
   })
 })

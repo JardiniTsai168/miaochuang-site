@@ -1,0 +1,27 @@
+---
+const admin = Astro.locals.user;
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <title>秒創網站 EmDash Host</title>
+    <style>
+      :root { color: #1a1a5e; background: #fff5f8; font-family: system-ui, sans-serif; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; }
+      main { width: min(calc(100% - 40px), 560px); padding: 40px; border-radius: 20px; background: white; box-shadow: 0 20px 60px rgba(26,26,94,.12); }
+      p { color: #67647a; line-height: 1.75; }
+      a { color: #dc4779; font-weight: 800; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>秒創網站 EmDash Host</h1>
+      <p>這個 Worker 負責存放與發布秒創網站測試站。公開網站路徑為 <code>/s/&#123;slug&#125;</code>。</p>
+      {admin && <a href="/_emdash/admin/content/sites">管理網站內容</a>}
+    </main>
+  </body>
+</html>

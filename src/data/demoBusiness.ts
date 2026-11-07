@@ -1,6 +1,6 @@
 import type { BusinessDraft, BusinessPhoto } from '../types'
 
-const HOUR = 60 * 60 * 1000
+const DAY = 24 * 60 * 60 * 1000
 const demoAsset = (filename: string) => `${import.meta.env.BASE_URL}demo/${filename}`
 
 const genericCampaignPhotos = [
@@ -29,9 +29,10 @@ export function createCampaignPhotos(photoPackIndex = Math.floor(Math.random() *
   const pack = campaignPhotoPacks[((photoPackIndex % campaignPhotoPackCount) + campaignPhotoPackCount) % campaignPhotoPackCount]
   const selectedPhotoIndexes = new Set<number>(pack)
   const remaining = genericCampaignPhotos.map((_, index) => index).filter((photoIndex) => !selectedPhotoIndexes.has(photoIndex))
-  return [...pack, ...remaining.slice(0, 3)].map((photoIndex, index) => {
+  const roles: BusinessPhoto['role'][] = ['hero', 'people', 'service', 'space', 'detail']
+  return [...pack, ...remaining.slice(0, 3)].slice(0, 5).map((photoIndex, index) => {
     const [filename, alt] = genericCampaignPhotos[photoIndex]
-    return { id: `campaign-photo-${photoIndex}`, url: demoAsset(filename), alt, selected: index < pack.length, source: 'demo' }
+    return { id: `campaign-photo-${photoIndex}`, role: roles[index], url: demoAsset(filename), alt, selected: true, source: 'demo' }
   })
 }
 
@@ -51,6 +52,7 @@ export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): B
     instagramUrl: 'https://www.instagram.com/',
     videoUrl: '',
     services: ['自家烘焙咖啡', '每日手作甜點', '季節限定飲品'],
+    offerings: ['手沖咖啡', '每日甜點', '季節飲品'],
     hours: [
       { label: '週一至週五', value: '11:00–20:00' },
       { label: '週六、週日', value: '10:00–21:00' },
@@ -61,6 +63,6 @@ export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): B
     accent: '#B85D3F',
     regenerationCount: 0,
     createdAt: now,
-    expiresAt: now + 48 * HOUR,
+    expiresAt: now + 7 * DAY,
   }
 }

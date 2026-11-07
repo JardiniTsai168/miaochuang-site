@@ -1,60 +1,60 @@
-# 秒創網站 MVP
+# 秒創網站 v2
 
-輸入產業、品牌／網站名稱與三個優勢，AI 會生成繁體中文網站文案與 8 張一致風格的品牌影像，再讓使用者挑選五套版型、修改內容與準備發布。營業時間選填。
+給台灣小型在地服務業使用的單頁網站生成器。使用者輸入產業、品牌名稱、三個優勢與至少一項主要服務，系統透過 OpenRouter 產生繁中文案、搭配共用授權圖庫，並套入五個可切換版型。
 
-## 使用流程
+完整產品邊界見 [`PRODUCT_CONTRACT.md`](./PRODUCT_CONTRACT.md)。
 
-1. 輸入產業、品牌名稱、三個優勢；營業時間選填。
-2. AI 產出主標題、品牌介紹、三個優勢文案與 8 張品牌影像。
-3. 系統預選 5 張影像套入五套響應式模板。
-4. 使用者切換版型、修改文案、增減影像與補充聯絡資料。
-5. 確認後銜接 lihiDomain 網域搜尋、結帳與發布。
+## v2 流程
 
-AI 不得捏造地址、價格、獎項、創立年份或使用者未提供的服務。生成影像發布前必須由品牌確認人物、商品與場景符合實際情況。
+1. 輸入品牌 brief；營業時間選填。
+2. OpenRouter 只依已提供事實改寫文案，不補造價格、地址、年資、證照、獎項、療效或服務。
+3. 系統搭配 5 個圖片版位，使用者可逐張替換並在瀏覽器端最佳化。
+4. 使用者切換五個版型、修改內容、預覽桌機與手機版。
+5. 內部測試按鈕把目前版本建立或更新到共用 EmDash host。
+6. 公開預覽保留 7 天、標記 `noindex`；正式登入、訂閱、付款與 Domain 購買後續由 lihi 系統接手。
 
-## 已完成
+## Repo 結構
 
-- 品牌 brief 表單與完整欄位驗證
-- Cloudflare Worker 串接 OpenAI Structured Outputs 與 Images API
-- 8 張影像角色：主視覺、主理人、顧客、產品／服務、過程、空間、細節、門面
-- 兩張並行生成、失敗訊息與上游錯誤隔離
-- 8 張候選、預選 5 張、最多選 8 張
-- 五套響應式模板與桌面／手機即時預覽
-- 48 小時預覽、內容與影像編輯、lihiDomain 交接畫面
+- `src/`：Vite + React 生成與編輯介面。
+- `worker/`：Cloudflare Worker，負責 OpenRouter 文案與 EmDash REST API 代理。
+- `emdash-site/`：官方 EmDash Cloudflare template 衍生的共用 host，使用 D1 + R2。
+- `scripts/visual-check.mjs`：桌機／手機與五版型視覺回歸。
 
-## 暫不包含
-
-- AI 影像永久儲存與店家自有照片上傳
-- lihiDomain 登入、網域搜尋、結帳、DNS、SSL 與正式發布
-- 正式發布後的內容管理後台
-
-## 開發與驗證
+## 本地驗證
 
 ```bash
 npm install
-npm run dev
 npm run check
+npm run emdash:build
+npm run visual-check
 ```
 
-## AI Worker
+## Generation Worker secrets
 
-Worker 使用 server-side secret：
+不得把 secrets 放進 repo。使用 Wrangler 設定：
 
 ```bash
-npx wrangler secret put OPENAI_API_KEY
-npm run worker:deploy
+npx wrangler secret put OPENROUTER_API_KEY
+npx wrangler secret put EMDASH_API_TOKEN
 ```
 
-可選環境變數：
+可選 vars / secrets：
 
-- `OPENAI_TEXT_MODEL`：預設 `gpt-6-astra`
-- `OPENAI_IMAGE_MODEL`：預設 `gpt-image-2.5-flare`
-- `ALLOWED_ORIGINS`：允許呼叫 Worker 的前端 origins
+- `OPENROUTER_TEXT_MODEL`：預設 `qwen/qwen3.5-plus-02-15`
+- `OPENROUTER_FALLBACK_MODEL`：主模型失敗時唯一備援
+- `PUBLIC_APP_URL`：OpenRouter attribution URL
+- `EMDASH_SITE_URL`：EmDash REST API origin
+- `EMDASH_PUBLIC_URL`：公開網站 origin；未設定則沿用 `EMDASH_SITE_URL`
+- `EMDASH_COLLECTION`：預設 `sites`
+- `EMDASH_PUBLIC_PATH`：預設 `s`
+- `ALLOWED_ORIGINS`：逗號分隔的前端 origins
 
-部署後將 Worker origin 設為 GitHub repository variable `VITE_GENERATION_API_BASE_URL`。前端建置流程會讀取這個變數。
+## API
 
-## API 契約
+- `POST /api/generate-content`：接收品牌 brief，回傳主標題、品牌介紹與三個優勢。
+- `POST /api/deploy-emdash`：首次建立 EmDash `sites` entry，之後更新同一 entry 並重新發布。
+- `GET /health`：Worker health check。
 
-`POST /api/generate-content` 接收品牌 brief，回傳結構化文案、8 個影像 prompts 與 8 個 alt texts。
+## Production repo 邊界
 
-`POST /api/generate-image` 接收單張 prompt，回傳壓縮 JPEG data URL。前端以兩個並行工作逐張完成 8 張影像，避免單一長請求。
+本 repo 是上游開發來源。`weedgood/lihi-homepage` 僅透過 feature branch 與固定 commit 整合，不在本 repo 直接改 production `main` 或 workflows。

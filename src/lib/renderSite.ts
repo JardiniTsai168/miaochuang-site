@@ -105,6 +105,7 @@ function sharedSections(draft: BusinessDraft) {
   const accent = /^#[0-9a-f]{6}$/i.test(draft.accent) ? draft.accent : '#b85d3f'
 
   const services = draft.services.filter(Boolean)
+  const offerings = draft.offerings.filter(Boolean)
   const hours = draft.hours.filter((item) => item.label || item.value)
   const gallery = photos.slice(1)
 
@@ -113,11 +114,12 @@ function sharedSections(draft: BusinessDraft) {
     hero,
     gallery,
     services,
+    offerings,
     hours,
     reviews,
     youtube,
-    serviceHtml: services.length
-      ? `<section class="section services" id="services"><div class="section-heading"><p>WHAT WE OFFER</p><h2>我們準備好的日常</h2></div><div class="service-list">${services
+    serviceHtml: offerings.length
+      ? `<section class="section services" id="services"><div class="section-heading"><p>WHAT WE OFFER</p><h2>主要服務</h2></div><div class="service-list">${offerings
           .map((service, index) => `<article><span>0${index + 1}</span><h3>${escapeHtml(service)}</h3></article>`)
           .join('')}</div></section>`
       : '',
@@ -391,14 +393,15 @@ function completeArtDirectionStyles(template: TemplateId): string {
 function fixedTemplateRules(): string {
   return `
     .hero h1{max-width:none;white-space:nowrap;font-size:min(var(--title-size),64px)}
+    .section h2{font-size:min(48px,clamp(32px,4.5vw,48px))}
     .about-grid.solo{grid-template-columns:1fr}
     .section{padding-block:56px}
     .template-compact .section{padding-block:32px}
-    @media(max-width:759px){.hero h1{font-size:min(var(--title-size),44px)}.section{padding-block:44px}.template-compact .section{padding-block:22px}}
+    @media(max-width:759px){.hero h1{font-size:min(var(--title-size),44px)}.section h2{font-size:min(36px,clamp(28px,8vw,36px))}.section{padding-block:44px}.template-compact .section{padding-block:22px}}
   `
 }
 
-export function renderSite(draft: BusinessDraft): string {
+export function renderSite(draft: BusinessDraft, options: { noindex?: boolean } = { noindex: true }): string {
   const shared = sharedSections(draft)
   const title = `${escapeHtml(draft.name)}｜${escapeHtml(draft.category)}`
   const description = escapeHtml(draft.description)
@@ -425,7 +428,7 @@ export function renderSite(draft: BusinessDraft): string {
       <div class="hero-media">${heroPhotos.map((photo) => `<img src="${safeUrl(photo!.url)}" alt="${escapeHtml(photo!.alt)}">`).join('')}</div>
       <div class="industry-art" data-industry="${identity.id}" aria-hidden="true"><span>${identity.icon}</span><p><strong>${identity.label}</strong><small>${identity.detail}</small></p></div>
       <span class="hero-index" aria-hidden="true">01</span>
-      <div class="hero-content"><p class="kicker">${escapeHtml(draft.category)}</p><h1 style="--title-size:${titleSize}px">${escapeHtml(draft.name)}</h1><p class="tagline">${escapeHtml(draft.tagline)}</p><div class="hero-actions">${draft.googleMapsUrl ? `<a class="button primary" href="${safeUrl(draft.googleMapsUrl)}" target="_blank" rel="noopener noreferrer">查看地圖</a>` : ''}${draft.phone ? `<a class="button" href="${phoneUrl(draft.phone)}">電話聯絡</a>` : ''}</div></div>
+      <div class="hero-content"><p class="kicker">${escapeHtml(draft.category)}</p><h1 style="--title-size:${titleSize}px">${escapeHtml(draft.name)}</h1><p class="tagline">${escapeHtml(draft.tagline)}</p><div class="hero-actions">${draft.lineUrl ? `<a class="button primary" href="${safeUrl(draft.lineUrl)}" target="_blank" rel="noopener noreferrer">LINE 預約諮詢</a>` : draft.phone ? `<a class="button primary" href="${phoneUrl(draft.phone)}">電話聯絡</a>` : ''}${draft.lineUrl && draft.phone ? `<a class="button" href="${phoneUrl(draft.phone)}">電話聯絡</a>` : ''}${draft.googleMapsUrl ? `<a class="button" href="${safeUrl(draft.googleMapsUrl)}" target="_blank" rel="noopener noreferrer">查看地圖</a>` : ''}</div></div>
     </header>${shared.heroSourceHtml}`
   const identityHtml = `<aside class="identity-strip" aria-label="店家產業與特色"><span class="identity-icon" aria-hidden="true">${identity.icon}</span><div class="identity-label"><span>${identity.label}</span><strong>${escapeHtml(draft.category)}</strong></div>${identityServices ? `<div class="identity-services">${identityServices}</div>` : ''}</aside>`
   const introHtml = `<div class="template-intro" aria-hidden="true"><span>${templateNames[draft.template]} / ${escapeHtml(draft.category)}</span><span></span><span></span></div>`
@@ -459,6 +462,7 @@ export function renderSite(draft: BusinessDraft): string {
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>${title}</title>
   <meta name="description" content="${description}">
+  ${options.noindex !== false ? '<meta name="robots" content="noindex,nofollow,noarchive">' : ''}
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   ${heroImage && !heroImage.startsWith('data:') ? `<meta property="og:image" content="${safeUrl(heroImage)}">` : ''}
@@ -471,7 +475,7 @@ export function renderSite(draft: BusinessDraft): string {
 </head>
 <body class="template-${draft.template}" data-layout="${draft.template}">
   <a class="skip" href="#main" target="_self">跳至主要內容</a>
-  <nav class="site-nav" aria-label="主要導覽"><strong>${escapeHtml(draft.name)}</strong><div><a href="#about" target="_self">關於品牌</a>${shared.services.length ? '<a href="#services" target="_self">品牌優勢</a>' : ''}${shared.gallery.length ? '<a href="#gallery" target="_self">品牌影像</a>' : ''}${hasContact ? '<a href="#contact" target="_self">聯絡資訊</a>' : ''}</div></nav>
+  <nav class="site-nav" aria-label="主要導覽"><strong>${escapeHtml(draft.name)}</strong><div><a href="#about" target="_self">關於品牌</a>${shared.offerings.length ? '<a href="#services" target="_self">主要服務</a>' : ''}${shared.gallery.length ? '<a href="#gallery" target="_self">品牌影像</a>' : ''}${hasContact ? '<a href="#contact" target="_self">聯絡資訊</a>' : ''}</div></nav>
   <main id="main">
     ${pageContent}
   </main>

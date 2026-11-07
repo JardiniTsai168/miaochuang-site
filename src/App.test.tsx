@@ -15,23 +15,23 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
     await user.click(screen.getByRole('button', { name: /生成我的網站/ }))
-    expect(screen.getByText(/請輸入產業類型/)).toBeInTheDocument()
+    expect(screen.getByText(/請選擇產業類型/)).toBeInTheDocument()
   })
 
   it('shows the core promise and pricing disclosure', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: /說出品牌的優勢/ })).toBeInTheDocument()
-    expect(screen.getByText('第二年託管 NT$999／年')).toBeInTheDocument()
-    expect(screen.getByText(/網域續約費另計/)).toBeInTheDocument()
+    expect(screen.getByText('生成與 7 天預覽免費')).toBeInTheDocument()
+    expect(screen.getByText(/正式收費與網域流程將由 lihi 訂閱機制處理/)).toBeInTheDocument()
   })
 
-  it('moves a saved website draft to the domain handoff screen', async () => {
+  it('moves a saved website draft to the EmDash deployment screen', async () => {
     const user = userEvent.setup()
     saveDraft(createDemoBusiness())
     render(<App />)
-    await user.click(screen.getByRole('button', { name: /確認網站，前往選網址/ }))
-    expect(screen.getByRole('heading', { name: /選一個正式網址/ })).toBeInTheDocument()
-    expect(screen.getByText(/lihiDomain 帳號、網域搜尋、結帳與部署/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /部署到 EmDash/ }))
+    expect(screen.getByRole('heading', { name: /送進 EmDash/ })).toBeInTheDocument()
+    expect(screen.getByText(/第一次建立測試站，之後重新部署會更新同一站/)).toBeInTheDocument()
   })
 
   it('makes all five website templates visible and selectable', async () => {
@@ -47,18 +47,15 @@ describe('App', () => {
     expect(screen.getByText('醒目海報', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
-  it('offers eight generated photo candidates with five selected by default', async () => {
+  it('offers five replaceable website image slots', async () => {
     const user = userEvent.setup()
     saveDraft(createDemoBusiness(Date.now(), 0))
     render(<App />)
     await user.click(screen.getByRole('button', { name: /^照片$/ }))
 
-    const photoButtons = screen.getAllByRole('button').filter((button) => button.querySelector('.photo-picker img'))
-    expect(photoButtons).toHaveLength(8)
-    expect(photoButtons.filter((button) => button.getAttribute('aria-pressed') === 'true')).toHaveLength(5)
-    expect(screen.getByText('已選 5／上限 8')).toBeInTheDocument()
-
-    await user.click(photoButtons[5])
-    expect(screen.getByText('已選 6／上限 8')).toBeInTheDocument()
+    expect(screen.getByText('5 個版位')).toBeInTheDocument()
+    expect(screen.getAllByText('替換圖片')).toHaveLength(5)
+    expect(screen.getByText('網站主視覺')).toBeInTheDocument()
+    expect(screen.getByText('細節特寫')).toBeInTheDocument()
   })
 })

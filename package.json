@@ -13,6 +13,7 @@
     "worker:typecheck": "tsc -p worker/tsconfig.json",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
+    "emdash:build": "pnpm --dir emdash-site build",
     "check": "npm run test && npm run worker:typecheck && npm run build"
   },
   "dependencies": {

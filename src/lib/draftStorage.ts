@@ -1,6 +1,6 @@
 import type { BusinessDraft } from '../types'
 
-const KEY = 'miaochuang-draft-v1'
+const KEY = 'miaochuang-draft-v2'
 
 export function saveDraft(draft: BusinessDraft): void {
   localStorage.setItem(KEY, JSON.stringify(draft))
@@ -29,6 +29,8 @@ export function clearDraft(): void {
 
 export function formatRemainingTime(expiresAt: number, now = Date.now()): string {
   const remaining = Math.max(0, expiresAt - now)
+  const days = Math.floor(remaining / (24 * 60 * 60 * 1000))
+  if (days >= 1) return `${days} 天`
   const hours = Math.ceil(remaining / (60 * 60 * 1000))
   return `${hours} 小時`
 }
