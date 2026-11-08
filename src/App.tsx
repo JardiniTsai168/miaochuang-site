@@ -8,8 +8,6 @@ import {
   Image as ImageIcon,
   Laptop,
   LayoutTemplate,
-  BadgeCheck,
-  Palette,
   Pencil,
   RotateCcw,
   Smartphone,
@@ -87,8 +85,8 @@ function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief
       <Header />
       <main>
         <section className="hero-app" aria-labelledby="hero-title">
+          <p className="eyebrow hero-eyebrow"><Sparkles size={15} aria-hidden="true" /> 給想快速建立品牌網站的你</p>
           <div className="hero-copy">
-            <p className="eyebrow"><Sparkles size={15} aria-hidden="true" /> 給想快速建立品牌網站的你</p>
             <h1 id="hero-title"><span>說出品牌的優勢，</span><br /><em>AI 幫你完成網站。</em></h1>
             <p className="hero-lead">輸入品牌重點，我們會產出網站文案、搭配合適圖片，再讓你從五個版型中挑選與修改。</p>
             <form className="source-form brief-form" onSubmit={submit} noValidate>
@@ -96,8 +94,10 @@ function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief
                 <label>產業類型<select value={industry} onChange={(event) => setIndustry(event.target.value)}><option value="">請選擇產業</option>{industries.map((item) => <option key={item}>{item}</option>)}</select></label>
                 <label>品牌／店家名稱<input value={brandName} onChange={(event) => setBrandName(event.target.value)} placeholder="例如：日光髮所" /></label>
               </div>
-              <fieldset><legend>三個優點或優勢</legend>{advantages.map((value, index) => <label key={index}><span>{index + 1}</span><input value={value} onChange={(event) => setAdvantages((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item) as [string, string, string])} placeholder={['最值得被記住的特色', '和別人不同的地方', '顧客選擇你的理由'][index]} /></label>)}</fieldset>
-              <fieldset><legend>主要服務或商品 <small>至少 1 項</small></legend>{offerings.map((value, index) => <label key={index}><span>{index + 1}</span><input value={value} onChange={(event) => setOfferings((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item) as [string, string, string])} placeholder={['例如：剪髮', '例如：染髮（選填）', '例如：頭皮護理（選填）'][index]} /></label>)}</fieldset>
+              <div className="brief-groups">
+                <fieldset><legend>三個優點或優勢</legend>{advantages.map((value, index) => <label key={index}><span>{index + 1}</span><input value={value} onChange={(event) => setAdvantages((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item) as [string, string, string])} placeholder={['最值得被記住的特色', '和別人不同的地方', '顧客選擇你的理由'][index]} /></label>)}</fieldset>
+                <fieldset><legend>主要服務或商品 <small>至少 1 項</small></legend>{offerings.map((value, index) => <label key={index}><span>{index + 1}</span><input value={value} onChange={(event) => setOfferings((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item) as [string, string, string])} placeholder={['例如：剪髮', '例如：染髮（選填）', '例如：頭皮護理（選填）'][index]} /></label>)}</fieldset>
+              </div>
               <label className="hours-field">營業時間 <small>選填</small><textarea value={hours} onChange={(event) => setHours(event.target.value)} rows={2} placeholder={'例如：\n週一至週五 10:00–19:00'} /></label>
               {error && <p className="field-error" id="source-error">{error}</p>}
               <div className="brief-actions">
@@ -107,27 +107,27 @@ function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief
               </div>
             </form>
           </div>
-          <div className="hero-demo" aria-label="網站生成流程示意">
-            <div className="demo-meta"><span>即時網站預覽</span><strong>01 / 05 版型</strong></div>
-            <div className="demo-window">
-              <div className="window-bar"><span /><span /><span /><small>preview.miaochuang.tw</small></div>
-              <div className="demo-site">
-                <div className="demo-image"><span>日光散步珈琲</span></div>
-                <div className="demo-copy"><span>把午後留給一杯好咖啡</span><i /></div>
+          <div className="hero-rail">
+            <div className="hero-demo" aria-label="網站生成流程示意">
+              <div className="demo-window">
+                <div className="window-bar"><span /><span /><span /><small>preview.miaochuang.tw</small></div>
+                <div className="demo-site">
+                  <div className="demo-image"><span>日光散步珈琲</span></div>
+                  <div className="demo-copy"><span>把午後留給一杯好咖啡</span><i /></div>
+                </div>
               </div>
+              <div className="floating-note note-source"><Check size={16} /> 文案與圖片已搭配</div>
+              <div className="floating-note note-time"><Clock3 size={16} /> 五套版型任你挑</div>
             </div>
-            <div className="floating-note note-source"><Check size={16} /> 文案與圖片已搭配</div>
-            <div className="floating-note note-time"><Clock3 size={16} /> 五套版型任你挑</div>
+            <aside className="hero-steps" aria-labelledby="how-title">
+              <div className="hero-steps-heading"><p>簡單到不用學</p><h2 id="how-title">三步完成網站</h2></div>
+              <ol>
+                <li><span>01</span><div><h3>提供品牌重點</h3><p>產業、名稱、優勢與服務</p></div></li>
+                <li><span>02</span><div><h3>立即生成範例</h3><p>文案、圖片與五種版型</p></div></li>
+                <li><span>03</span><div><h3>確認並建立品牌</h3><p>修改內容後前往購買網域</p></div></li>
+              </ol>
+            </aside>
           </div>
-        </section>
-
-        <section className="how-it-works" aria-labelledby="how-title">
-          <div className="section-intro"><p>簡單到不需要學</p><h2 id="how-title">三步，讓店家有一個正式網址</h2></div>
-          <ol>
-            <li><span>01</span><div><BadgeCheck aria-hidden="true" /><h3>提供品牌重點</h3><p>產業、名稱、三個優勢與主要服務；營業時間選填。</p></div></li>
-            <li><span>02</span><div><Palette aria-hidden="true" /><h3>立即生成範例</h3><p>AI 寫文案，系統從授權圖庫搭配適合的網站圖片。</p></div></li>
-            <li><span>03</span><div><Store aria-hidden="true" /><h3>換版型、改內容</h3><p>需要時換上自己的照片，再分享 7 天預覽網址。</p></div></li>
-          </ol>
         </section>
 
         <section className="scope-note">

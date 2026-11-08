@@ -78,7 +78,8 @@ for (const item of cases) {
     ? await page.evaluate(() => {
         const form = document.querySelector('.brief-form')?.getBoundingClientRect()
         const preview = document.querySelector('.hero-demo')?.getBoundingClientRect()
-        return Boolean(form && preview && form.bottom <= window.innerHeight && preview.bottom <= window.innerHeight)
+        const steps = document.querySelector('.hero-steps')?.getBoundingClientRect()
+        return Boolean(form && preview && steps && form.bottom <= window.innerHeight && preview.bottom <= window.innerHeight && steps.bottom <= window.innerHeight && Math.abs(form.bottom - steps.bottom) <= 40)
       })
     : undefined
   for (const frame of page.frames()) {
