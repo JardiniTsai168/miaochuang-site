@@ -108,6 +108,7 @@ function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief
             </form>
           </div>
           <div className="hero-demo" aria-label="網站生成流程示意">
+            <div className="demo-meta"><span>即時網站預覽</span><strong>01 / 05 版型</strong></div>
             <div className="demo-window">
               <div className="window-bar"><span /><span /><span /><small>preview.miaochuang.tw</small></div>
               <div className="demo-site">

@@ -10,6 +10,7 @@ const browser = await chromium.launch({ headless: true, executablePath })
 
 const cases = [
   { name: 'landing-desktop', path: '/', width: 1440, height: 1000 },
+  { name: 'landing-fold-desktop', path: '/', width: 1440, height: 900 },
   { name: 'landing-mobile', path: '/', width: 390, height: 844 },
   { name: 'importing-desktop', path: '/?demo=importing', width: 1440, height: 1000 },
   { name: 'importing-mobile', path: '/?demo=importing', width: 390, height: 844 },
@@ -73,6 +74,13 @@ for (const item of cases) {
       lineCount: Math.round(rect.height / lineHeight),
     }
   }).catch(() => undefined)
+  const foldContentFits = item.name === 'landing-fold-desktop'
+    ? await page.evaluate(() => {
+        const form = document.querySelector('.brief-form')?.getBoundingClientRect()
+        const preview = document.querySelector('.hero-demo')?.getBoundingClientRect()
+        return Boolean(form && preview && form.bottom <= window.innerHeight && preview.bottom <= window.innerHeight)
+      })
+    : undefined
   for (const frame of page.frames()) {
     await frame.evaluate(async () => {
       const images = [...document.images]
@@ -145,6 +153,7 @@ for (const item of cases) {
     overflow: dimensions.content > dimensions.viewport,
     brokenImages,
     ...(pageTitle === undefined ? {} : { pageTitle }),
+    ...(foldContentFits === undefined ? {} : { foldContentFits }),
     ...(heroTitle === undefined ? {} : { heroTitle }),
     ...(heroDecorOverlap === undefined ? {} : { heroDecorOverlap }),
     ...(templateMetrics === undefined ? {} : { templateMetrics }),
@@ -157,4 +166,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 40 : 48) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.foldContentFits === false || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 40 : 48) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1
