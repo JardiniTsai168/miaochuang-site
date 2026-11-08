@@ -22,8 +22,6 @@ const cases = [
   { name: 'studio-calm-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['靜謐藝廊', '查看網站', '手機版預覽'] },
   { name: 'studio-compact-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['手作菜單', '查看網站', '手機版預覽'] },
   { name: 'studio-mosaic-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['影像拼貼', '查看網站', '手機版預覽'] },
-  { name: 'ready-desktop', path: '/?demo=ready', width: 1440, height: 1000 },
-  { name: 'ready-mobile', path: '/?demo=ready', width: 390, height: 844 },
 ]
 
 const results = []

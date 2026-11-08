@@ -271,30 +271,6 @@ img { max-width: 100%; }
 .studio-cta > div { display: none; }
 .studio-cta .primary-button { width: 100%; }
 
-/* Ready */
-.ready-page { min-height: 100vh; background: var(--blush); }
-.ready-layout { width: min(calc(100% - 32px), 1040px); margin: 0 auto; padding: 26px 0 56px; }
-.back-button { margin-bottom: 26px; }
-.ready-copy { max-width: 690px; }
-.ready-title-row { margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
-.ready-title-row .eyebrow { margin: 0; }
-.ready-check { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: #e7f6ef; color: var(--green); }
-.ready-copy h1 { max-width: 18ch; margin: 0; color: var(--navy); font-family: "Noto Serif TC", serif; font-size: clamp(1.9rem, 3.4vw, 2.85rem); line-height: 1.3; letter-spacing: -.04em; }
-.ready-copy > p:not(.eyebrow) { max-width: 600px; margin: 18px 0 0; color: var(--muted); line-height: 1.8; }
-.ready-actions { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
-.deployment-success { margin-top: 18px; padding: 14px 16px; display: flex; align-items: center; gap: 11px; border: 1px solid #b9dfd0; border-radius: 10px; background: #edf9f4; color: var(--green); }
-.deployment-success div { display: flex; flex-direction: column; gap: 3px; }
-.deployment-success strong { font-size: .82rem; }
-.deployment-success a { display: inline-flex; align-items: center; gap: 5px; color: var(--navy); font-size: .74rem; font-weight: 800; text-underline-offset: 3px; }
-.handoff-card { margin-top: 48px; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-sm); }
-.handoff-card > p { margin: 0 0 16px; color: var(--pink-deep); font-size: .7rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-.handoff-card ul { margin: 0; padding: 0; list-style: none; }
-.handoff-card li { min-height: 42px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); color: var(--navy); font-size: .8rem; font-weight: 700; }
-.handoff-card li svg { color: var(--green); }
-.handoff-card > div { margin-top: 22px; display: flex; flex-direction: column; gap: 5px; }
-.handoff-card > div span { color: var(--muted); font-size: .65rem; }
-.handoff-card > div strong { color: var(--navy); font-size: .82rem; line-height: 1.55; }
-
 @media (hover: hover) and (pointer: fine) {
   .primary-button:hover:not(:disabled) { transform: translateY(-2px); background: #c93a6b; box-shadow: 0 14px 30px rgba(220, 71, 121, .27); }
   .secondary-button:hover, .text-button:hover, .back-button:hover { color: var(--pink-deep); }
@@ -354,9 +330,6 @@ img { max-width: 100%; }
   .preview-stage { min-height: 650px; }
   .preview-stage .browser-shell { max-width: 940px; }
   .studio-cta { justify-content: flex-end; padding-inline: 28px; }
-  .ready-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; column-gap: 64px; row-gap: 24px; align-items: start; padding-top: 30px; }
-  .ready-layout > .back-button { grid-column: 1 / -1; margin-bottom: 0; justify-self: start; }
-  .handoff-card { margin-top: 0; }
 }
 
 @media (min-width: 1180px) {

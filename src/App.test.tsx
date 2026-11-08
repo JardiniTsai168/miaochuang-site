@@ -25,13 +25,12 @@ describe('App', () => {
     expect(screen.getByText(/正式收費與網域流程將由 lihi 訂閱機制處理/)).toBeInTheDocument()
   })
 
-  it('moves a saved website draft to the EmDash deployment screen', async () => {
-    const user = userEvent.setup()
+  it('offers brand creation after the template is selected', () => {
     saveDraft(createDemoBusiness())
     render(<App />)
-    await user.click(screen.getByRole('button', { name: /部署到 EmDash/ }))
-    expect(screen.getByRole('heading', { name: /送進 EmDash/ })).toBeInTheDocument()
-    expect(screen.getByText(/第一次建立測試站，之後重新部署會更新同一站/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /建立品牌/ })).toBeInTheDocument()
+    expect(screen.getByText(/下一步前往 lihi 購買網域/)).toBeInTheDocument()
+    expect(screen.queryByText(/部署到 EmDash/)).not.toBeInTheDocument()
   })
 
   it('makes all five website templates visible and selectable', async () => {

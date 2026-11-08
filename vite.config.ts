@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.GITHUB_ACTIONS ? '/miaochuang-site/' : '/',
+  base: process.env.VITE_BASE_PATH || (process.env.GITHUB_ACTIONS ? '/miaochuang-site/' : '/'),
   publicDir: 'public',
   server: {
     host: '0.0.0.0',

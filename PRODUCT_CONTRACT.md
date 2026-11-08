@@ -68,12 +68,12 @@
 - 頁面顯示到期時間；建立後 7 天刪除草稿、使用者上傳圖片與兩種網址。
 - 匿名使用者每個瀏覽器／IP 每天最多建立 3 個網站；每站免費重新生成文案 1 次。異常流量才要求 CAPTCHA。
 
-## EmDash POC
+## 建立品牌與網域購買
 
-- 第一版暫時顯示「部署到 EmDash」測試按鈕，僅供內部使用，不先串 lihi 登入或權限。
-- 按下後只部署目前選中的版型與最新內容；首次建立 EmDash 站，後續操作更新同一站。
-- EmDash POC 實際部署至 Cloudflare Workers，驗證後台修改文字／圖片與未來自訂 Domain 的技術路徑。
-- lihi 訂閱、付款、購買 Domain 與第一年免費方案本輪不實作；正式開放前移除測試按鈕並改接 lihi 流程。
+- 編輯器完成動作顯示「建立品牌」，不再提供可繞過付款的公開 EmDash 部署 API。
+- 點擊後先在共用 EmDash 建立或更新一筆未發布 handoff，再前往 lihi 網域搜尋；來源欄位帶 `miaochuang:<handoffId>` 供付款事件關聯。
+- 未付款 handoff 維持 draft，不產生正式網址、獨立 Worker、D1、KV 或後台。
+- 付款成功必須由處理 invoice 的 lihi backend 發送簽章 webhook；不得以 thank-you 頁、query string 或瀏覽器回傳值作為付款依據。
 
 ## 正式站 EmDash 架構
 
@@ -81,6 +81,7 @@
 - 使用者完成 lihi 訂閱與網域購買後，才建立一站一 EmDash 的專屬後台與管理員；商家只能存取自己的網站。
 - 正式 provisioning 包含 EmDash Worker、D1、KV Session、圖片儲存、管理員邀請、Custom Domain 綁定，以及將預覽內容匯入正式站。
 - 正式站後續更新沿用同一套 EmDash 資源，不因重新部署重複建立站台。
+- provisioning webhook 以 invoice ID 做 idempotency，並驗證簽章、付款狀態、網域與 `handoffId` 後才執行。
 
 ## Repo 與發布邊界
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { deployToEmDash, generateContent, handleRequest, type Env } from './index'
+import { generateContent, handleRequest, prepareBrandCheckout, type Env } from './index'
 
 const env: Env = {
   OPENROUTER_API_KEY: 'test-key',
@@ -8,7 +8,6 @@ const env: Env = {
   PUBLIC_APP_URL: 'https://lihi.io/tools/site-builder/',
   ALLOWED_ORIGINS: 'https://jardinitsai168.github.io',
   EMDASH_SITE_URL: 'https://cms.example.com',
-  EMDASH_PUBLIC_URL: 'https://sites.example.com',
   EMDASH_API_TOKEN: 'emdash-test-key',
   EMDASH_COLLECTION: 'sites',
 }
@@ -80,28 +79,36 @@ describe('OpenRouter generation Worker', () => {
     expect(body).not.toContain(env.OPENROUTER_API_KEY)
   })
 
-  it('creates and publishes a new EmDash site entry', async () => {
+  it('creates an unpublished brand handoff before domain checkout', async () => {
     const calls: Array<{ url: string; method: string; body: unknown }> = []
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       calls.push({ url: String(input), method: String(init?.method), body: JSON.parse(String(init?.body)) })
-      if (String(input).endsWith('/publish')) return Response.json({ success: true, data: { item: { id: 'entry-1', slug: 'site-test' } } })
-      return Response.json({ success: true, data: { item: { id: 'entry-1', slug: 'site-test' } } }, { status: 201 })
+      return Response.json({ success: true, data: { item: { id: 'entry-1', slug: 'brand-test' } } }, { status: 201 })
     })
-    const result = await deployToEmDash({ name: '日光髮所', template: 'editorial', expiresAt: Date.now() + 1000, html: '<!doctype html><title>日光髮所</title>' }, env, fetcher as typeof fetch)
-    expect(result).toMatchObject({ entryId: 'entry-1', url: expect.stringMatching(/^https:\/\/sites\.example\.com\/s\/site-/u) })
-    expect(calls).toHaveLength(2)
+    const result = await prepareBrandCheckout({ name: '日光髮所', template: 'editorial', expiresAt: Date.now() + 1000, html: '<!doctype html><title>日光髮所</title>' }, env, fetcher as typeof fetch)
+    expect(result).toMatchObject({ handoffId: 'entry-1', checkoutUrl: expect.stringContaining('https://lihi.io/go/search?') })
+    const checkout = new URL(result.checkoutUrl)
+    expect(checkout.searchParams.get('s')).toBe('日光髮所')
+    expect(checkout.searchParams.get('source')).toBe('miaochuang:entry-1')
+    expect(calls).toHaveLength(1)
     expect(calls[0]).toMatchObject({ url: 'https://cms.example.com/_emdash/api/content/sites', method: 'POST' })
-    expect(calls[1]).toMatchObject({ url: 'https://cms.example.com/_emdash/api/content/sites/entry-1/publish', method: 'POST' })
+    expect(calls[0].body).toMatchObject({ status: 'draft', data: { name: '日光髮所' } })
   })
 
-  it('updates and republishes the same EmDash entry', async () => {
+  it('updates the same unpublished handoff when brand checkout is retried', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => Response.json({ success: true, data: { item: { id: 'entry-7', slug: 'site-existing' } } }))
-    const result = await deployToEmDash({
+    const result = await prepareBrandCheckout({
       name: '日光髮所', template: 'calm', expiresAt: Date.now() + 1000, html: '<!doctype html><title>更新</title>',
-      deployment: { entryId: 'entry-7', slug: 'site-existing' },
+      handoff: { handoffId: 'entry-7', slug: 'site-existing' },
     }, env, fetcher as typeof fetch)
-    expect(result).toMatchObject({ entryId: 'entry-7', slug: 'site-existing', url: 'https://sites.example.com/s/site-existing' })
+    expect(result).toMatchObject({ handoffId: 'entry-7', slug: 'site-existing' })
     expect(fetcher).toHaveBeenNthCalledWith(1, 'https://cms.example.com/_emdash/api/content/sites/entry-7', expect.objectContaining({ method: 'PUT' }))
-    expect(fetcher).toHaveBeenNthCalledWith(2, 'https://cms.example.com/_emdash/api/content/sites/entry-7/publish', expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('does not expose the old direct deployment API', async () => {
+    const response = await handleRequest(new Request('https://api.example.com/api/deploy-emdash', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+    }), env, vi.fn() as typeof fetch)
+    expect(response.status).toBe(404)
   })
 })

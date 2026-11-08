@@ -56,11 +56,11 @@ export type BusinessDraft = {
   regenerationCount: number
   createdAt: number
   expiresAt: number
-  emdash?: {
-    entryId: string
+  brandCheckout?: {
+    handoffId: string
     slug: string
-    url: string
-    deployedAt: number
+    checkoutUrl: string
+    createdAt: number
   }
 }
 
@@ -77,5 +77,5 @@ export type BrandBrief = {
   hours?: string
 }
 
-export type AppStage = 'landing' | 'importing' | 'studio' | 'ready'
+export type AppStage = 'landing' | 'importing' | 'studio'
 export type PreviewViewport = 'desktop' | 'mobile'

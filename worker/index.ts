@@ -5,10 +5,9 @@ export type Env = {
   PUBLIC_APP_URL?: string
   ALLOWED_ORIGINS?: string
   EMDASH_SITE_URL?: string
-  EMDASH_PUBLIC_URL?: string
   EMDASH_API_TOKEN?: string
   EMDASH_COLLECTION?: string
-  EMDASH_PUBLIC_PATH?: string
+  LIHI_DOMAIN_SEARCH_URL?: string
   EMDASH_SERVICE?: { fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> }
 }
 
@@ -28,12 +27,12 @@ type GeneratedContent = {
   advantages: [string, string, string]
 }
 
-type EmDashDeployInput = {
+type BrandCheckoutInput = {
   name: string
   template: string
   expiresAt: number
   html: string
-  deployment?: { entryId: string; slug: string }
+  handoff?: { handoffId: string; slug: string }
 }
 
 type EmDashItem = { id: string; slug: string | null }
@@ -117,19 +116,19 @@ function parseGenerated(value: unknown): GeneratedContent {
   return generated
 }
 
-function parseDeployInput(value: unknown): EmDashDeployInput {
+function parseBrandCheckoutInput(value: unknown): BrandCheckoutInput {
   const body = (value || {}) as Record<string, unknown>
-  const rawDeployment = body.deployment && typeof body.deployment === 'object' ? body.deployment as Record<string, unknown> : undefined
-  const deployment = rawDeployment ? { entryId: clean(rawDeployment.entryId, 120), slug: clean(rawDeployment.slug, 120) } : undefined
-  const input: EmDashDeployInput = {
+  const rawHandoff = body.handoff && typeof body.handoff === 'object' ? body.handoff as Record<string, unknown> : undefined
+  const handoff = rawHandoff ? { handoffId: clean(rawHandoff.handoffId, 120), slug: clean(rawHandoff.slug, 120) } : undefined
+  const input: BrandCheckoutInput = {
     name: clean(body.name, 80),
     template: clean(body.template, 40),
     expiresAt: typeof body.expiresAt === 'number' ? body.expiresAt : 0,
     html: typeof body.html === 'string' ? body.html : '',
-    ...(deployment?.entryId && /^[a-z0-9-]+$/iu.test(deployment.slug) ? { deployment } : {}),
+    ...(handoff?.handoffId && /^[a-z0-9-]+$/iu.test(handoff.slug) ? { handoff } : {}),
   }
   if (!input.name || !input.template || !input.expiresAt || !input.html || input.html.length > 2_000_000) {
-    throw new ApiError(400, 'INVALID_DEPLOYMENT', '部署資料不完整或網站內容超過大小限制。')
+    throw new ApiError(400, 'INVALID_BRAND_CHECKOUT', '品牌資料不完整或網站內容超過大小限制。')
   }
   return input
 }
@@ -176,14 +175,19 @@ async function emdashRequest<T>(path: string, init: RequestInit, env: Env, fetch
   return payload.data
 }
 
-export async function deployToEmDash(input: EmDashDeployInput, env: Env, fetcher: Fetcher): Promise<{ entryId: string; slug: string; url: string; deployedAt: number }> {
+export async function prepareBrandCheckout(input: BrandCheckoutInput, env: Env, fetcher: Fetcher): Promise<{ handoffId: string; slug: string; checkoutUrl: string; createdAt: number }> {
   const collection = clean(env.EMDASH_COLLECTION || 'sites', 60)
   if (!/^[a-z][a-z0-9_-]*$/u.test(collection)) throw new ApiError(503, 'EMDASH_NOT_CONFIGURED', 'EmDash Collection 設定不正確。')
-  const slug = input.deployment?.slug || `site-${crypto.randomUUID().slice(0, 8)}`
-  const data = { name: input.name, template: input.template, html: input.html, expires_at: new Date(input.expiresAt).toISOString() }
+  const slug = input.handoff?.slug || `brand-${crypto.randomUUID().slice(0, 8)}`
+  const data = {
+    name: input.name,
+    template: input.template,
+    html: input.html,
+    expires_at: new Date(input.expiresAt).toISOString(),
+  }
   let item: EmDashItem
-  if (input.deployment) {
-    const result = await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(input.deployment.entryId)}`, {
+  if (input.handoff) {
+    const result = await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(input.handoff.handoffId)}`, {
       method: 'PUT', body: JSON.stringify({ slug, data }),
     }, env, fetcher)
     item = result.item
@@ -193,12 +197,11 @@ export async function deployToEmDash(input: EmDashDeployInput, env: Env, fetcher
     }, env, fetcher)
     item = result.item
   }
-  await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(item.id)}/publish`, {
-    method: 'POST', body: '{}',
-  }, env, fetcher)
-  const publicUrl = emdashBaseUrl(env.EMDASH_PUBLIC_URL || env.EMDASH_SITE_URL, 'Public URL')
-  const publicPath = `/${(env.EMDASH_PUBLIC_PATH || 's').replace(/^\/+|\/+$/gu, '')}`
-  return { entryId: item.id, slug, url: `${publicUrl}${publicPath}/${encodeURIComponent(slug)}`, deployedAt: Date.now() }
+  const checkoutUrl = new URL(env.LIHI_DOMAIN_SEARCH_URL || 'https://lihi.io/go/search')
+  if (checkoutUrl.protocol !== 'https:') throw new ApiError(503, 'CHECKOUT_NOT_CONFIGURED', '網域購買網址設定不正確。')
+  checkoutUrl.searchParams.set('s', input.name)
+  checkoutUrl.searchParams.set('source', `miaochuang:${item.id}`)
+  return { handoffId: item.id, slug, checkoutUrl: checkoutUrl.toString(), createdAt: Date.now() }
 }
 
 export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetcher): Promise<GeneratedContent> {
@@ -284,8 +287,8 @@ export async function handleRequest(request: Request, env: Env, fetcher: Fetcher
     if (request.method === 'POST' && url.pathname === '/api/generate-content') {
       return json(request, env, await generateContent(parseBrief(body), env, fetcher))
     }
-    if (request.method === 'POST' && url.pathname === '/api/deploy-emdash') {
-      return json(request, env, await deployToEmDash(parseDeployInput(body), env, fetcher))
+    if (request.method === 'POST' && url.pathname === '/api/brand-checkout') {
+      return json(request, env, await prepareBrandCheckout(parseBrandCheckoutInput(body), env, fetcher))
     }
     throw new ApiError(404, 'NOT_FOUND', '找不到這個 API 路徑。')
   } catch (error) {

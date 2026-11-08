@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowLeft,
   ArrowRight,
   Check,
   ChevronRight,
@@ -23,7 +22,7 @@ import { clearDraft, formatRemainingTime, loadDraft, saveDraft } from './lib/dra
 import { openPreview, renderSite, templateNames } from './lib/renderSite'
 import { generateBusiness, validateBrief } from './lib/source'
 import { optimizeImage } from './lib/image'
-import { deployToEmDash } from './lib/deploy'
+import { createBrandCheckout } from './lib/brandCheckout'
 import type { AppStage, BrandBrief, BusinessDraft, PreviewViewport, TemplateId } from './types'
 
 type EditorTab = 'template' | 'content' | 'photos'
@@ -276,14 +275,31 @@ function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patc
   )
 }
 
-function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDraft; mode: 'demo' | 'generated'; onChange: (draft: BusinessDraft) => void; onReady: () => void; onReset: () => void }) {
+function Studio({ draft, mode, onChange, onReset }: { draft: BusinessDraft; mode: 'demo' | 'generated'; onChange: (draft: BusinessDraft) => void; onReset: () => void }) {
   const [tab, setTab] = useState<EditorTab>('template')
   const [viewport, setViewport] = useState<PreviewViewport>('desktop')
   const [studioView, setStudioView] = useState<StudioView>('edit')
+  const [creatingBrand, setCreatingBrand] = useState(false)
+  const [checkoutError, setCheckoutError] = useState('')
   const html = useMemo(() => renderSite(draft), [draft])
 
   function update(patch: Partial<BusinessDraft>) {
     onChange({ ...draft, ...patch })
+  }
+
+  async function startBrandCheckout() {
+    setCreatingBrand(true)
+    setCheckoutError('')
+    try {
+      const brandCheckout = await createBrandCheckout(draft)
+      const nextDraft = { ...draft, brandCheckout }
+      onChange(nextDraft)
+      saveDraft(nextDraft)
+      window.location.assign(brandCheckout.checkoutUrl)
+    } catch (reason) {
+      setCheckoutError(reason instanceof Error ? reason.message : '品牌建立失敗，請稍後再試。')
+      setCreatingBrand(false)
+    }
   }
 
   const tabs: Array<{ id: EditorTab; label: string; icon: React.ReactNode }> = [
@@ -334,47 +350,7 @@ function Studio({ draft, mode, onChange, onReady, onReset }: { draft: BusinessDr
           </div>
         </section>
       </main>
-      <div className="studio-cta"><div><strong>內容都確認好了嗎？</strong><span>內部測試：把目前選中的版本部署成一個 EmDash 網站。</span></div><button className="primary-button" type="button" onClick={onReady}>部署到 EmDash <ChevronRight size={18} /></button></div>
-    </div>
-  )
-}
-
-function Ready({ draft, onBack, onReset, onChange }: { draft: BusinessDraft; onBack: () => void; onReset: () => void; onChange: (draft: BusinessDraft) => void }) {
-  const [deploying, setDeploying] = useState(false)
-  const [error, setError] = useState('')
-
-  async function deploy() {
-    setDeploying(true)
-    setError('')
-    try {
-      const emdash = await deployToEmDash(draft)
-      onChange({ ...draft, emdash })
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'EmDash 部署失敗，請稍後再試。')
-    } finally {
-      setDeploying(false)
-    }
-  }
-
-  return (
-    <div className="ready-page">
-      <Header studio onReset={onReset} />
-      <main className="ready-layout">
-        <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> 回到網站預覽</button>
-        <div className="ready-copy">
-          <div className="ready-title-row"><span className="ready-check"><Check size={22} /></span><p className="eyebrow">準備部署測試站</p></div>
-          <h1>把「{draft.name}」送進 EmDash</h1>
-          <p>將部署目前的「{templateNames[draft.template]}」版型與最新內容。第一次建立測試站，之後重新部署會更新同一站。</p>
-          <div className="ready-actions"><button className="primary-button" type="button" disabled={deploying} onClick={deploy}>{deploying ? '部署中…' : draft.emdash ? '更新 EmDash 網站' : '立即部署到 EmDash'}</button><button className="secondary-button" type="button" onClick={() => openPreview(draft)}>再次查看網站 <ExternalLink size={15} /></button></div>
-          {error && <p className="field-error">{error}</p>}
-          {draft.emdash && <div className="deployment-success" role="status"><Check size={18} aria-hidden="true" /><div><strong>部署完成</strong><a href={draft.emdash.url} target="_blank" rel="noreferrer">開啟 EmDash 網站 <ExternalLink size={14} /></a></div></div>}
-        </div>
-        <aside className="handoff-card">
-          <p>已完成</p>
-          <ul><li><Check size={15} /> 品牌定位與網站文案</li><li><Check size={15} /> {draft.photos.length} 個圖片版位</li><li><Check size={15} /> 三個品牌優勢</li><li><Check size={15} /> {templateNames[draft.template]}版型</li><li><Check size={15} /> 7 天預覽草稿</li></ul>
-          <div><span>本輪驗證</span><strong>EmDash 建站、更新與 Cloudflare 部署</strong></div>
-        </aside>
-      </main>
+      <div className="studio-cta"><div><strong>內容都確認好了嗎？</strong><span>下一步前往 lihi 購買網域；付款完成後，我們會建立專屬網站與 EmDash 後台。</span>{checkoutError && <span className="field-error" role="alert">{checkoutError}</span>}</div><button className="primary-button" type="button" disabled={creatingBrand} onClick={startBrandCheckout}>{creatingBrand ? '準備網域購買…' : '建立品牌'} <ChevronRight size={18} /></button></div>
     </div>
   )
 }
@@ -382,10 +358,10 @@ function Ready({ draft, onBack, onReset, onChange }: { draft: BusinessDraft; onB
 export default function App() {
   const demoStage = useMemo(() => new URLSearchParams(window.location.search).get('demo'), [])
   const existing = useMemo(() => {
-    if (demoStage === 'studio' || demoStage === 'ready') return createDemoBusiness()
+    if (demoStage === 'studio') return createDemoBusiness()
     return loadDraft()
   }, [demoStage])
-  const [stage, setStage] = useState<AppStage>(demoStage === 'ready' ? 'ready' : existing ? 'studio' : 'landing')
+  const [stage, setStage] = useState<AppStage>(existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'generated'>('demo')
   const [importStep, setImportStep] = useState(0)
@@ -428,7 +404,6 @@ export default function App() {
   }
 
   if (stage === 'importing') return <Importing activeStep={importStep} />
-  if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReady={() => setStage('ready')} onReset={reset} />
-  if (stage === 'ready' && draft) return <Ready draft={draft} onBack={() => setStage('studio')} onReset={reset} onChange={setDraft} />
+  if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReset={reset} />
   return <Landing onGenerate={startGeneration} onDemo={useDemo} initialError={importError} />
 }

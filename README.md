@@ -10,13 +10,14 @@
 2. OpenRouter 只依已提供事實改寫文案，不補造價格、地址、年資、證照、獎項、療效或服務。
 3. 系統搭配 5 個圖片版位，使用者可逐張替換並在瀏覽器端最佳化。
 4. 使用者切換五個版型、修改內容、預覽桌機與手機版。
-5. 內部測試按鈕把目前版本建立或更新到共用 EmDash host。
-6. 公開預覽保留 7 天、標記 `noindex`；正式登入、訂閱、付款與 Domain 購買後續由 lihi 系統接手。
+5. 使用者按「建立品牌」後，系統先保存不可公開的品牌 handoff，再前往 lihi 購買網域。
+6. lihi 付款成功事件透過簽章 webhook 啟動正式 provisioning；完成後才建立專屬網站與 EmDash 後台。
+7. 公開預覽保留 7 天並標記 `noindex`；未付款的 handoff 不會發布成正式網站。
 
 ## Repo 結構
 
 - `src/`：Vite + React 生成與編輯介面。
-- `worker/`：Cloudflare Worker，負責 OpenRouter 文案與 EmDash REST API 代理。
+- `worker/`：Cloudflare Worker，負責 OpenRouter 文案與網域購買前的品牌 handoff。
 - `emdash-site/`：官方 EmDash Cloudflare template 衍生的共用 host，使用 D1 + R2。
 - `scripts/visual-check.mjs`：桌機／手機與五版型視覺回歸。
 
@@ -44,16 +45,17 @@ npx wrangler secret put EMDASH_API_TOKEN
 - `OPENROUTER_FALLBACK_MODEL`：主模型失敗時唯一備援
 - `PUBLIC_APP_URL`：OpenRouter attribution URL
 - `EMDASH_SITE_URL`：EmDash REST API origin
-- `EMDASH_PUBLIC_URL`：公開網站 origin；未設定則沿用 `EMDASH_SITE_URL`
 - `EMDASH_COLLECTION`：預設 `sites`
-- `EMDASH_PUBLIC_PATH`：預設 `s`
+- `LIHI_DOMAIN_SEARCH_URL`：預設 `https://lihi.io/go/search`
 - `ALLOWED_ORIGINS`：逗號分隔的前端 origins
 
 ## API
 
 - `POST /api/generate-content`：接收品牌 brief，回傳主標題、品牌介紹與三個優勢。
-- `POST /api/deploy-emdash`：首次建立 EmDash `sites` entry，之後更新同一 entry 並重新發布。
+- `POST /api/brand-checkout`：建立或更新未發布的品牌 handoff，回傳帶關聯 ID 的 lihi 網域購買網址。
 - `GET /health`：Worker health check。
+
+付款成功不能由瀏覽器回傳值判定。處理 `/ajax/checkout/tappay` 的 lihi backend 必須在 invoice 已付款且網域購買成立後，將 `source=miaochuang:<handoffId>` 以簽章 webhook 傳給 provisioning service；該 service 需做簽章驗證與 invoice idempotency，才可建立專屬 EmDash runtime 並匯入 handoff。
 
 ## Production repo 邊界
 
