@@ -78,8 +78,12 @@ for (const item of cases) {
     ? await page.evaluate(() => {
         const form = document.querySelector('.brief-form')?.getBoundingClientRect()
         const preview = document.querySelector('.hero-demo')?.getBoundingClientRect()
-        const steps = document.querySelector('.hero-steps')?.getBoundingClientRect()
-        return Boolean(form && preview && steps && form.bottom <= window.innerHeight && preview.bottom <= window.innerHeight && steps.bottom <= window.innerHeight && Math.abs(form.bottom - steps.bottom) <= 40)
+        const title = document.querySelector('.hero-copy h1')?.getBoundingClientRect()
+        const note = document.querySelector('.note-source')?.getBoundingClientRect()
+        const lineHeight = title ? Number.parseFloat(getComputedStyle(document.querySelector('.hero-copy h1')).lineHeight) : 0
+        const titleLines = title && lineHeight ? Math.round(title.height / lineHeight) : 0
+        const overlapArea = title && note ? Math.max(0, Math.min(title.right, note.right) - Math.max(title.left, note.left)) * Math.max(0, Math.min(title.bottom, note.bottom) - Math.max(title.top, note.top)) : 0
+        return Boolean(form && preview && form.bottom <= window.innerHeight && preview.bottom <= window.innerHeight && titleLines === 1 && overlapArea === 0)
       })
     : undefined
   for (const frame of page.frames()) {

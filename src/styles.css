@@ -110,16 +110,6 @@ img { max-width: 100%; }
 .note-source { left: -8px; top: -28px; }
 .note-time { right: -6px; bottom: -25px; }
 
-.hero-steps { width: min(100%, 560px); margin: 56px auto 0; padding: 22px 0 0; border-top: 1px solid var(--navy); color: var(--navy); }
-.hero-steps-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
-.hero-steps-heading p { margin: 0; color: var(--pink-deep); font-size: .72rem; font-weight: 900; letter-spacing: .1em; }
-.hero-steps-heading h2 { margin: 0; font-family: "Noto Serif TC", serif; font-size: 1.5rem; line-height: 1.2; }
-.hero-steps ol { margin: 18px 0 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
-.hero-steps li { min-height: 64px; display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
-.hero-steps li > span { color: var(--pink-deep); font: 700 .7rem/1 "DM Sans", sans-serif; }
-.hero-steps h3 { margin: 0; font-size: .9rem; }
-.hero-steps li p { margin: 3px 0 0; color: var(--muted); font-size: .74rem; }
-
 .how-it-works { width: min(calc(100% - 32px), 1120px); margin: 0 auto; padding: 58px 0 68px; }
 .section-intro { display: grid; gap: 12px; margin-bottom: 36px; }
 .section-intro > p { margin: 0; color: var(--pink-deep); font-size: .75rem; font-weight: 900; letter-spacing: .12em; }
@@ -317,23 +307,21 @@ img { max-width: 100%; }
 @media (min-width: 900px) {
   .app-header { min-height: 78px; }
   .app-header.is-studio { padding-inline: 26px; }
-  .hero-app { min-height: 0; padding: 26px 0 38px; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(440px, .95fr); grid-template-areas: "eyebrow eyebrow" "copy rail"; column-gap: 52px; row-gap: 10px; align-items: start; }
+  .hero-app { min-height: 0; padding: 28px 0 40px; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(440px, .95fr); grid-template-areas: "eyebrow eyebrow" "title title" "lead rail" "form rail"; column-gap: 52px; row-gap: 10px; align-items: start; }
   .hero-eyebrow { grid-area: eyebrow; margin-bottom: 0; }
-  .hero-copy { grid-area: copy; }
-  .hero-copy h1 { max-width: 12ch; font-size: clamp(2.5rem, 3.1vw, 2.75rem); }
-  .hero-lead { max-width: 54ch; margin-top: 16px; }
-  .source-form { max-width: none; margin-top: 18px; }
+  .hero-copy { display: contents; }
+  .hero-copy h1 { grid-area: title; max-width: none; font-size: clamp(2.6rem, 3.25vw, 3rem); white-space: nowrap; }
+  .hero-copy h1 br { display: none; }
+  .hero-lead { grid-area: lead; max-width: 54ch; margin-top: 8px; }
+  .source-form { grid-area: form; max-width: none; margin-top: 12px; }
   .brief-form { padding: 14px; }
   .brief-form input, .brief-form textarea, .brief-form select { min-height: 44px; margin-top: 5px; padding-block: 8px; }
   .brief-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .brief-form fieldset { margin: 12px 0; gap: 7px; }
   .brief-actions { margin-top: 12px; }
-  .hero-rail { grid-area: rail; min-width: 0; }
+  .hero-rail { grid-area: rail; min-width: 0; padding-top: 34px; }
   .hero-demo { width: 100%; margin: 0; transform: none; }
-  .demo-image { min-height: 260px; }
-  .hero-steps { width: 100%; margin-top: 34px; padding-top: 18px; }
-  .hero-steps ol { margin-top: 12px; }
-  .hero-steps li { min-height: 56px; }
+  .demo-image { min-height: 300px; }
   .how-it-works { padding-top: 72px; }
   .section-intro { grid-template-columns: 180px 1fr; align-items: start; }
   .how-it-works ol { margin-left: 180px; }

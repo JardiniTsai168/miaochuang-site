@@ -8,6 +8,8 @@ import {
   Image as ImageIcon,
   Laptop,
   LayoutTemplate,
+  BadgeCheck,
+  Palette,
   Pencil,
   RotateCcw,
   Smartphone,
@@ -119,15 +121,16 @@ function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief
               <div className="floating-note note-source"><Check size={16} /> 文案與圖片已搭配</div>
               <div className="floating-note note-time"><Clock3 size={16} /> 五套版型任你挑</div>
             </div>
-            <aside className="hero-steps" aria-labelledby="how-title">
-              <div className="hero-steps-heading"><p>簡單到不用學</p><h2 id="how-title">三步完成網站</h2></div>
-              <ol>
-                <li><span>01</span><div><h3>提供品牌重點</h3><p>產業、名稱、優勢與服務</p></div></li>
-                <li><span>02</span><div><h3>立即生成範例</h3><p>文案、圖片與五種版型</p></div></li>
-                <li><span>03</span><div><h3>確認並建立品牌</h3><p>修改內容後前往購買網域</p></div></li>
-              </ol>
-            </aside>
           </div>
+        </section>
+
+        <section className="how-it-works" aria-labelledby="how-title">
+          <div className="section-intro"><p>簡單到不用學</p><h2 id="how-title">三步，讓店家有一個正式網址</h2></div>
+          <ol>
+            <li><span>01</span><div><BadgeCheck aria-hidden="true" /><h3>提供品牌重點</h3><p>產業、名稱、三個優勢與主要服務；營業時間選填。</p></div></li>
+            <li><span>02</span><div><Palette aria-hidden="true" /><h3>立即生成範例</h3><p>AI 寫文案，系統從授權圖庫搭配適合的網站圖片。</p></div></li>
+            <li><span>03</span><div><Store aria-hidden="true" /><h3>確認並建立品牌</h3><p>修改內容後前往購買網域，再建立正式網站。</p></div></li>
+          </ol>
         </section>
 
         <section className="scope-note">
