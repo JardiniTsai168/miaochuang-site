@@ -11,6 +11,8 @@ const browser = await chromium.launch({ headless: true, executablePath })
 const cases = [
   { name: 'landing-desktop', path: '/', width: 1440, height: 1000 },
   { name: 'landing-mobile', path: '/', width: 390, height: 844 },
+  { name: 'importing-desktop', path: '/?demo=importing', width: 1440, height: 1000 },
+  { name: 'importing-mobile', path: '/?demo=importing', width: 390, height: 844 },
   { name: 'studio-desktop', path: '/?demo=studio', width: 1440, height: 1000 },
   { name: 'studio-vivid-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '醒目海報' },
   { name: 'studio-calm-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '靜謐藝廊' },

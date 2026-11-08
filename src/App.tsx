@@ -357,11 +357,19 @@ function Studio({ draft, mode, onChange, onReset }: { draft: BusinessDraft; mode
 
 export default function App() {
   const demoStage = useMemo(() => new URLSearchParams(window.location.search).get('demo'), [])
+  const demoTemplate = useMemo(() => {
+    const value = new URLSearchParams(window.location.search).get('template')
+    return templates.some((template) => template.id === value) ? value as TemplateId : undefined
+  }, [])
   const existing = useMemo(() => {
-    if (demoStage === 'studio') return createDemoBusiness()
+    if (demoStage === 'landing' || demoStage === 'importing') return null
+    if (demoStage === 'studio') {
+      const demo = createDemoBusiness()
+      return demoTemplate ? { ...demo, template: demoTemplate } : demo
+    }
     return loadDraft()
-  }, [demoStage])
-  const [stage, setStage] = useState<AppStage>(existing ? 'studio' : 'landing')
+  }, [demoStage, demoTemplate])
+  const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'generated'>('demo')
   const [importStep, setImportStep] = useState(0)
@@ -403,7 +411,7 @@ export default function App() {
     setStage('landing')
   }
 
-  if (stage === 'importing') return <Importing activeStep={importStep} />
+  if (stage === 'importing') return <Importing activeStep={demoStage === 'importing' ? 2 : importStep} />
   if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReset={reset} />
   return <Landing onGenerate={startGeneration} onDemo={useDemo} initialError={importError} />
 }

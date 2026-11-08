@@ -9,6 +9,7 @@ describe('App', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.restoreAllMocks()
+    window.history.replaceState({}, '', '/')
   })
 
   it('requires the complete brand brief', async () => {
@@ -31,6 +32,25 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /建立品牌/ })).toBeInTheDocument()
     expect(screen.getByText(/下一步前往 lihi 購買網域/)).toBeInTheDocument()
     expect(screen.queryByText(/部署到 EmDash/)).not.toBeInTheDocument()
+  })
+
+  it('exposes deterministic review links for each flow step', () => {
+    saveDraft(createDemoBusiness())
+    window.history.replaceState({}, '', '/?demo=landing')
+    const { unmount } = render(<App />)
+    expect(screen.getByRole('heading', { name: /說出品牌的優勢/ })).toBeInTheDocument()
+    unmount()
+
+    window.history.replaceState({}, '', '/?demo=importing')
+    render(<App />)
+    expect(screen.getByRole('heading', { name: /整理成一個完整的店家故事/ })).toBeInTheDocument()
+  })
+
+  it('opens a requested template directly for review', () => {
+    window.history.replaceState({}, '', '/?demo=studio&template=mosaic')
+    render(<App />)
+    expect(screen.getByRole('button', { name: /影像拼貼/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('影像拼貼', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
   it('makes all five website templates visible and selectable', async () => {
