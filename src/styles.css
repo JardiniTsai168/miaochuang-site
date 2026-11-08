@@ -319,9 +319,10 @@ img { max-width: 100%; }
   .brief-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .brief-form fieldset { margin: 12px 0; gap: 7px; }
   .brief-actions { margin-top: 12px; }
-  .hero-rail { grid-area: rail; min-width: 0; padding-top: 34px; }
+  .hero-rail { grid-area: rail; min-width: 0; align-self: end; }
   .hero-demo { width: 100%; margin: 0; transform: none; }
   .demo-image { min-height: 300px; }
+  .note-source { top: -50px; }
   .how-it-works { padding-top: 72px; }
   .section-intro { grid-template-columns: 180px 1fr; align-items: start; }
   .how-it-works ol { margin-left: 180px; }
