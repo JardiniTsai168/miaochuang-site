@@ -64,6 +64,15 @@ for (const item of cases) {
     viewport: window.innerWidth,
     content: document.documentElement.scrollWidth,
   }))
+  const pageTitle = await page.locator('main h1').first().evaluate((heading) => {
+    const style = getComputedStyle(heading)
+    const lineHeight = Number.parseFloat(style.lineHeight)
+    const rect = heading.getBoundingClientRect()
+    return {
+      fontSize: Number.parseFloat(style.fontSize),
+      lineCount: Math.round(rect.height / lineHeight),
+    }
+  }).catch(() => undefined)
   for (const frame of page.frames()) {
     await frame.evaluate(async () => {
       const images = [...document.images]
@@ -135,6 +144,7 @@ for (const item of cases) {
     ...dimensions,
     overflow: dimensions.content > dimensions.viewport,
     brokenImages,
+    ...(pageTitle === undefined ? {} : { pageTitle }),
     ...(heroTitle === undefined ? {} : { heroTitle }),
     ...(heroDecorOverlap === undefined ? {} : { heroDecorOverlap }),
     ...(templateMetrics === undefined ? {} : { templateMetrics }),
@@ -147,4 +157,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 44 : 64) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 52 : 64) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 40 : 48) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1

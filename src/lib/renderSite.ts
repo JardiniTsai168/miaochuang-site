@@ -392,12 +392,12 @@ function completeArtDirectionStyles(template: TemplateId): string {
 
 function fixedTemplateRules(): string {
   return `
-    .hero h1{max-width:none;white-space:nowrap;font-size:min(var(--title-size),64px)}
-    .section h2{font-size:min(48px,clamp(32px,4.5vw,48px))}
+    .hero h1{max-width:none;white-space:nowrap;font-size:min(var(--title-size),48px)}
+    .section h2{font-size:min(40px,clamp(30px,3.5vw,40px))}
     .about-grid.solo{grid-template-columns:1fr}
-    .section{padding-block:56px}
-    .template-compact .section{padding-block:32px}
-    @media(max-width:759px){.hero h1{font-size:min(var(--title-size),44px)}.section h2{font-size:min(36px,clamp(28px,8vw,36px))}.section{padding-block:44px}.template-compact .section{padding-block:22px}}
+    .section{padding-block:48px}.section-heading{margin-bottom:32px}
+    .template-compact .section{padding-block:28px}
+    @media(max-width:759px){.hero h1{font-size:min(var(--title-size),36px)}.section h2{font-size:min(32px,clamp(26px,7vw,32px))}.section{padding-block:36px}.section-heading{margin-bottom:24px}.template-compact .section{padding-block:20px}}
   `
 }
 
@@ -409,7 +409,7 @@ export function renderSite(draft: BusinessDraft, options: { noindex?: boolean } 
   const heroPhotos = [shared.hero, ...shared.gallery.slice(0, 2)].filter(Boolean)
   const identity = industryIdentity(draft.category)
   const titleLength = Math.max(Array.from(draft.name.trim()).length, 6)
-  const titleSize = Math.max(16, Math.min(54, Math.floor(270 / titleLength)))
+  const titleSize = Math.max(16, Math.min(48, Math.floor(250 / titleLength)))
   const identityServices = shared.services
     .slice(0, 3)
     .map((service) => `<span>${escapeHtml(service)}</span>`)

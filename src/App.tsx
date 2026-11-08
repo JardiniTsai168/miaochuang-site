@@ -145,9 +145,13 @@ function Importing({ activeStep }: { activeStep: number }) {
     <div className="import-screen">
       <Header studio />
       <main className="import-panel" aria-live="polite">
-        <div className="import-orbit"><Store size={34} aria-hidden="true" /><span /><span /></div>
-        <p className="eyebrow">正在建立你的網站</p>
-        <h1>我們正在把散落的資料，<br />整理成一個完整的店家故事。</h1>
+        <div className="import-intro">
+          <div className="import-orbit"><Store size={34} aria-hidden="true" /><span /><span /></div>
+          <div>
+            <p className="eyebrow">正在建立你的網站</p>
+            <h1>正在整理資料，<br />建立完整的店家故事。</h1>
+          </div>
+        </div>
         <ol>
           {importSteps.map((step, index) => (
             <li key={step} className={index < activeStep ? 'done' : index === activeStep ? 'active' : ''}>

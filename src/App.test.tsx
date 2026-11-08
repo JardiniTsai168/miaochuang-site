@@ -43,7 +43,7 @@ describe('App', () => {
 
     window.history.replaceState({}, '', '/?demo=importing')
     render(<App />)
-    expect(screen.getByRole('heading', { name: /整理成一個完整的店家故事/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /正在整理資料，建立完整的店家故事/ })).toBeInTheDocument()
   })
 
   it('opens a requested template directly for review', () => {
