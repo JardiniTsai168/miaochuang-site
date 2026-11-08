@@ -75,6 +75,13 @@
 - EmDash POC 實際部署至 Cloudflare Workers，驗證後台修改文字／圖片與未來自訂 Domain 的技術路徑。
 - lihi 訂閱、付款、購買 Domain 與第一年免費方案本輪不實作；正式開放前移除測試按鈕並改接 lihi 流程。
 
+## 正式站 EmDash 架構
+
+- 免費生成與 7 天預覽使用共用平台，不為每個免費草稿建立獨立 Cloudflare 資源或管理後台。
+- 使用者完成 lihi 訂閱與網域購買後，才建立一站一 EmDash 的專屬後台與管理員；商家只能存取自己的網站。
+- 正式 provisioning 包含 EmDash Worker、D1、KV Session、圖片儲存、管理員邀請、Custom Domain 綁定，以及將預覽內容匯入正式站。
+- 正式站後續更新沿用同一套 EmDash 資源，不因重新部署重複建立站台。
+
 ## Repo 與發布邊界
 
 - `JardiniTsai168/miaochuang-site` 是功能開發與上游來源 repo。
