@@ -11,7 +11,7 @@ export class BrandCheckoutError extends Error {
   }
 }
 
-export async function createBrandCheckout(draft: BusinessDraft): Promise<BrandCheckout> {
+export async function createBrandCheckout(draft: BusinessDraft, launchMode: 'public' | 'brand' = 'brand'): Promise<BrandCheckout> {
   const deployableDraft: BusinessDraft = {
     ...draft,
     photos: draft.photos.map((photo) => ({
@@ -27,6 +27,7 @@ export async function createBrandCheckout(draft: BusinessDraft): Promise<BrandCh
       template: draft.template,
       expiresAt: draft.expiresAt,
       html: renderSite(deployableDraft, { noindex: true }),
+      launchMode,
       handoff: draft.brandCheckout ? { handoffId: draft.brandCheckout.handoffId, slug: draft.brandCheckout.slug } : undefined,
     }),
   }).catch(() => null)
@@ -34,6 +35,6 @@ export async function createBrandCheckout(draft: BusinessDraft): Promise<BrandCh
   if (!response) throw new BrandCheckoutError('目前無法連線到品牌建立服務。', 'SERVICE_UNAVAILABLE')
   const payload = await response.json().catch(() => null) as (BrandCheckout & { error?: { code?: string; message?: string } }) | null
   if (!response.ok) throw new BrandCheckoutError(payload?.error?.message || '品牌建立失敗，請稍後再試。', payload?.error?.code)
-  if (!payload?.handoffId || !payload.slug || !payload.checkoutUrl) throw new BrandCheckoutError('品牌建立服務回傳的資料不完整。', 'INVALID_RESPONSE')
+  if (!payload?.handoffId || !payload.slug || !payload.checkoutUrl || !payload.previewUrl) throw new BrandCheckoutError('品牌建立服務回傳的資料不完整。', 'INVALID_RESPONSE')
   return payload
 }

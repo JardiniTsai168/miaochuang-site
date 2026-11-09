@@ -60,6 +60,7 @@ export type BusinessDraft = {
     handoffId: string
     slug: string
     checkoutUrl: string
+    previewUrl: string
     createdAt: number
   }
 }
@@ -77,5 +78,5 @@ export type BrandBrief = {
   hours?: string
 }
 
-export type AppStage = 'landing' | 'importing' | 'studio'
+export type AppStage = 'landing' | 'importing' | 'studio' | 'launch'
 export type PreviewViewport = 'desktop' | 'mobile'

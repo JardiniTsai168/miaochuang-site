@@ -1,4 +1,4 @@
-import { createCampaignPhotos } from '../data/demoBusiness'
+import { createIndustryPhotos } from '../data/industryPhotos'
 import type { BrandBrief, BusinessDraft, BusinessHours, ImportResult } from '../types'
 
 const API_BASE_URL = (import.meta.env.VITE_GENERATION_API_BASE_URL || '').replace(/\/$/u, '')
@@ -70,7 +70,7 @@ export async function generateBusiness(brief: BrandBrief): Promise<ImportResult>
     services: content.advantages,
     offerings: brief.offerings.map((item) => item.trim()).filter(Boolean),
     hours: parseHours(brief.hours),
-    photos: createCampaignPhotos(Math.abs([...brief.industry].reduce((sum, char) => sum + char.charCodeAt(0), 0))),
+    photos: createIndustryPhotos(brief.industry.trim(), brief.offerings),
     reviews: [],
     template: 'editorial',
     accent: '#B85D3F',

@@ -85,8 +85,12 @@ describe('OpenRouter generation Worker', () => {
       calls.push({ url: String(input), method: String(init?.method), body: JSON.parse(String(init?.body)) })
       return Response.json({ success: true, data: { item: { id: 'entry-1', slug: 'brand-test' } } }, { status: 201 })
     })
-    const result = await prepareBrandCheckout({ name: '日光髮所', template: 'editorial', expiresAt: Date.now() + 1000, html: '<!doctype html><title>日光髮所</title>' }, env, fetcher as typeof fetch)
-    expect(result).toMatchObject({ handoffId: 'entry-1', checkoutUrl: expect.stringContaining('https://lihi.io/go/search?') })
+    const result = await prepareBrandCheckout({ name: '日光髮所', template: 'editorial', expiresAt: Date.now() + 1000, html: '<!doctype html><title>日光髮所</title>', launchMode: 'brand' }, env, fetcher as typeof fetch)
+    expect(result).toMatchObject({
+      handoffId: 'entry-1',
+      checkoutUrl: expect.stringContaining('https://lihi.io/go/search?'),
+      previewUrl: expect.stringContaining('/s/brand-'),
+    })
     const checkout = new URL(result.checkoutUrl)
     expect(checkout.searchParams.get('s')).toBe('日光髮所')
     expect(checkout.searchParams.get('source')).toBe('miaochuang:entry-1')
@@ -99,10 +103,26 @@ describe('OpenRouter generation Worker', () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => Response.json({ success: true, data: { item: { id: 'entry-7', slug: 'site-existing' } } }))
     const result = await prepareBrandCheckout({
       name: '日光髮所', template: 'calm', expiresAt: Date.now() + 1000, html: '<!doctype html><title>更新</title>',
+      launchMode: 'brand',
       handoff: { handoffId: 'entry-7', slug: 'site-existing' },
     }, env, fetcher as typeof fetch)
     expect(result).toMatchObject({ handoffId: 'entry-7', slug: 'site-existing' })
     expect(fetcher).toHaveBeenNthCalledWith(1, 'https://cms.example.com/_emdash/api/content/sites/entry-7', expect.objectContaining({ method: 'PUT' }))
+  })
+
+  it('publishes a noindex public preview with a seven-day expiry', async () => {
+    const calls: Array<{ url: string; body: unknown }> = []
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({ url: String(input), body: JSON.parse(String(init?.body)) })
+      return Response.json({ success: true, data: { item: { id: 'entry-public', slug: 'brand-public' } } }, { status: 201 })
+    })
+    const result = await prepareBrandCheckout({
+      name: '日光髮所', template: 'editorial', expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      html: '<!doctype html><meta name="robots" content="noindex,nofollow"><title>日光髮所</title>', launchMode: 'public',
+    }, env, fetcher as typeof fetch)
+    expect(result.previewUrl).toMatch(/\/s\/brand-/u)
+    expect(calls[0].body).toMatchObject({ status: 'draft', data: { expires_at: expect.any(String) } })
+    expect(calls[1]).toMatchObject({ url: 'https://cms.example.com/_emdash/api/content/sites/entry-public/publish', body: {} })
   })
 
   it('does not expose the old direct deployment API', async () => {

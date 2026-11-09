@@ -272,12 +272,52 @@ img { max-width: 100%; }
 .studio-cta > div { display: none; }
 .studio-cta .primary-button { width: 100%; }
 
+/* Launch */
+.launch-page { min-height: 100vh; background-color: #fffdfd; background-image: linear-gradient(rgba(26,26,94,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(26,26,94,.035) 1px, transparent 1px); background-size: 24px 24px; }
+.launch-main { width: min(calc(100% - 32px), 1120px); margin: 0 auto; padding: 28px 0 56px; }
+.launch-back { margin-bottom: 24px; }
+.launch-heading { max-width: 760px; }
+.launch-heading .eyebrow { margin-bottom: 10px; }
+.launch-heading h1 { margin: 0; color: var(--navy); font-family: "Noto Serif TC", serif; font-size: clamp(2rem, 9vw, 2.375rem); line-height: 1.2; letter-spacing: -.045em; }
+.launch-heading > p:last-child { margin: 12px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.7; }
+.launch-options { margin-top: 26px; display: grid; gap: 14px; }
+.launch-option { position: relative; min-height: 172px; padding: 24px; display: grid; grid-template-columns: 48px 1fr 24px; align-items: start; gap: 16px; text-align: left; color: var(--ink); border: 1px solid #dcd5dc; border-radius: 16px; background: rgba(255,255,255,.96); box-shadow: 0 8px 22px rgba(65,35,53,.06); transition: border-color .18s var(--ease-out), box-shadow .18s var(--ease-out), transform .18s var(--ease-out); }
+.launch-option.active { border-color: var(--pink-deep); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 12%, transparent), 0 14px 34px rgba(65,35,53,.09); }
+.launch-option-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: var(--pink-pale); color: var(--pink-deep); }
+.launch-option-icon svg { width: 23px; height: 23px; }
+.launch-option-copy { min-width: 0; display: flex; flex-direction: column; }
+.launch-option-copy small { color: var(--pink-deep); font-size: .68rem; font-weight: 900; letter-spacing: .07em; }
+.launch-option-copy strong { margin-top: 7px; color: var(--navy); font-size: 1.05rem; line-height: 1.45; }
+.launch-option-copy em { margin-top: 8px; color: var(--muted); font-size: .77rem; font-style: normal; line-height: 1.65; }
+.choice-mark { width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid #d7cfd6; border-radius: 50%; color: #fff; background: #fff; }
+.launch-option.active .choice-mark { border-color: var(--pink-deep); background: var(--pink-deep); }
+.recommend-badge { position: absolute; right: 18px; top: -12px; padding: 5px 10px; border-radius: 999px; background: var(--navy); color: #fff; font-size: .65rem; font-weight: 900; letter-spacing: .08em; }
+.launch-action { margin-top: 14px; padding: 18px; display: flex; flex-direction: column; gap: 16px; border: 1px solid color-mix(in srgb, var(--pink) 45%, var(--line)); border-radius: 14px; background: var(--pink-pale); }
+.launch-action > div { display: flex; flex-direction: column; gap: 5px; }
+.launch-action strong { color: var(--navy); font-size: .86rem; }
+.launch-action span { color: var(--muted); font-size: .72rem; line-height: 1.55; }
+.launch-action .primary-button { width: 100%; }
+.launch-error { max-width: none; text-align: right; }
+.domain-value { margin-top: 48px; padding-top: 40px; border-top: 1px solid var(--navy); }
+.domain-value-heading { max-width: 740px; }
+.domain-value-heading > p { margin: 0 0 8px; color: var(--pink-deep); font: 900 .68rem/1.4 "DM Sans", sans-serif; letter-spacing: .14em; }
+.domain-value-heading h2 { margin: 0; color: var(--navy); font-family: "Noto Serif TC", serif; font-size: clamp(1.75rem, 6vw, 2.125rem); line-height: 1.3; letter-spacing: -.035em; }
+.domain-value-heading span { display: block; margin-top: 10px; color: var(--muted); font-size: .84rem; line-height: 1.7; }
+.domain-benefits { margin-top: 24px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+.domain-benefits article { min-height: 180px; padding: 20px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto 1fr; align-content: start; border: 1px solid #ddd6dd; border-radius: 14px; background: rgba(255,255,255,.94); }
+.domain-benefits article > span { color: #aaa1aa; font: 700 .64rem/1 "DM Sans", sans-serif; letter-spacing: .1em; }
+.domain-benefits article > svg { width: 22px; color: var(--pink-deep); }
+.domain-benefits h3 { grid-column: 1 / -1; margin: 26px 0 0; color: var(--navy); font-size: .98rem; }
+.domain-benefits p { grid-column: 1 / -1; margin: 8px 0 0; color: var(--muted); font-size: .75rem; line-height: 1.65; }
+.domain-source { margin: 12px 0 0; color: var(--muted); font-size: .67rem; line-height: 1.6; }
+
 @media (hover: hover) and (pointer: fine) {
   .primary-button:hover:not(:disabled) { transform: translateY(-2px); background: #c93a6b; box-shadow: 0 14px 30px rgba(220, 71, 121, .27); }
   .secondary-button:hover, .text-button:hover, .back-button:hover { color: var(--pink-deep); }
   .photo-replace:hover img { transform: scale(1.025); }
   .photo-picker img { transition: transform .25s var(--ease-out); }
   .template-switcher button:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--pink-deep) 55%, #d9d0d7); }
+  .launch-option:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--pink-deep) 55%, #d9d0d7); }
 }
 
 @media (min-width: 640px) {
@@ -302,6 +342,10 @@ img { max-width: 100%; }
   .studio-cta > div span { color: var(--muted); font-size: .66rem; }
   .studio-cta .primary-button { width: auto; }
   .ready-actions { flex-direction: row; }
+  .launch-options { grid-template-columns: 1fr 1fr; }
+  .launch-action { flex-direction: row; align-items: center; justify-content: space-between; }
+  .launch-action .primary-button { width: auto; flex: none; }
+  .domain-benefits { grid-template-columns: 1fr 1fr; }
 }
 
 @media (min-width: 900px) {
@@ -347,6 +391,11 @@ img { max-width: 100%; }
   .preview-stage { min-height: 650px; }
   .preview-stage .browser-shell { max-width: 940px; }
   .studio-cta { justify-content: flex-end; padding-inline: 28px; }
+  .launch-main { padding-top: 38px; padding-bottom: 72px; }
+  .launch-heading h1 { font-size: 2.875rem; }
+  .launch-options { margin-top: 32px; gap: 18px; }
+  .domain-value { margin-top: 60px; padding-top: 48px; }
+  .domain-benefits { grid-template-columns: repeat(4, 1fr); gap: 12px; }
 }
 
 @media (min-width: 1180px) {

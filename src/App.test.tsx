@@ -26,12 +26,19 @@ describe('App', () => {
     expect(screen.getByText(/正式收費與網域流程將由 lihi 訂閱機制處理/)).toBeInTheDocument()
   })
 
-  it('offers brand creation after the template is selected', () => {
+  it('moves from the editor to website launch choices', async () => {
+    const user = userEvent.setup()
     saveDraft(createDemoBusiness())
     render(<App />)
-    expect(screen.getByRole('button', { name: /建立品牌/ })).toBeInTheDocument()
-    expect(screen.getByText(/下一步前往 lihi 購買網域/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /網站上線/ })).toBeInTheDocument()
+    expect(screen.getByText('下一步，部署你的網站讓它上線')).toBeInTheDocument()
     expect(screen.queryByText(/部署到 EmDash/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /網站上線/ }))
+    expect(screen.getByRole('heading', { name: /選擇網站上線方式/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /部署到公共網域/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /部署到屬於自己的品牌網域/ })).toBeInTheDocument()
+    expect(screen.getByText('一個網域，不只是一個網址。')).toBeInTheDocument()
   })
 
   it('exposes deterministic review links for each flow step', () => {
@@ -42,8 +49,13 @@ describe('App', () => {
     unmount()
 
     window.history.replaceState({}, '', '/?demo=importing')
-    render(<App />)
+    const importing = render(<App />)
     expect(screen.getByRole('heading', { name: /正在整理資料，建立完整的店家故事/ })).toBeInTheDocument()
+    importing.unmount()
+
+    window.history.replaceState({}, '', '/?demo=launch')
+    render(<App />)
+    expect(screen.getByRole('heading', { name: /選擇網站上線方式/ })).toBeInTheDocument()
   })
 
   it('opens a requested template directly for review', () => {

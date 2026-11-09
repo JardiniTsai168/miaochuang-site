@@ -1,17 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
+  ArrowLeft,
+  BarChart3,
   Check,
   ChevronRight,
   Clock3,
   ExternalLink,
+  Globe2,
   Image as ImageIcon,
   Laptop,
   LayoutTemplate,
+  Link2,
+  Mail,
   BadgeCheck,
   Palette,
   Pencil,
+  QrCode,
   RotateCcw,
+  ShieldCheck,
   Smartphone,
   Sparkles,
   Store,
@@ -283,31 +290,14 @@ function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patc
   )
 }
 
-function Studio({ draft, mode, onChange, onReset }: { draft: BusinessDraft; mode: 'demo' | 'generated'; onChange: (draft: BusinessDraft) => void; onReset: () => void }) {
+function Studio({ draft, mode, onChange, onReset, onLaunch }: { draft: BusinessDraft; mode: 'demo' | 'generated'; onChange: (draft: BusinessDraft) => void; onReset: () => void; onLaunch: () => void }) {
   const [tab, setTab] = useState<EditorTab>('template')
   const [viewport, setViewport] = useState<PreviewViewport>('desktop')
   const [studioView, setStudioView] = useState<StudioView>('edit')
-  const [creatingBrand, setCreatingBrand] = useState(false)
-  const [checkoutError, setCheckoutError] = useState('')
   const html = useMemo(() => renderSite(draft), [draft])
 
   function update(patch: Partial<BusinessDraft>) {
     onChange({ ...draft, ...patch })
-  }
-
-  async function startBrandCheckout() {
-    setCreatingBrand(true)
-    setCheckoutError('')
-    try {
-      const brandCheckout = await createBrandCheckout(draft)
-      const nextDraft = { ...draft, brandCheckout }
-      onChange(nextDraft)
-      saveDraft(nextDraft)
-      window.location.assign(brandCheckout.checkoutUrl)
-    } catch (reason) {
-      setCheckoutError(reason instanceof Error ? reason.message : '品牌建立失敗，請稍後再試。')
-      setCreatingBrand(false)
-    }
   }
 
   const tabs: Array<{ id: EditorTab; label: string; icon: React.ReactNode }> = [
@@ -358,7 +348,79 @@ function Studio({ draft, mode, onChange, onReset }: { draft: BusinessDraft; mode
           </div>
         </section>
       </main>
-      <div className="studio-cta"><div><strong>內容都確認好了嗎？</strong><span>下一步前往 lihi 購買網域；付款完成後，我們會建立專屬網站與 EmDash 後台。</span>{checkoutError && <span className="field-error" role="alert">{checkoutError}</span>}</div><button className="primary-button" type="button" disabled={creatingBrand} onClick={startBrandCheckout}>{creatingBrand ? '準備網域購買…' : '建立品牌'} <ChevronRight size={18} /></button></div>
+      <div className="studio-cta"><div><strong>內容都確認好了嗎？</strong><span>下一步，部署你的網站讓它上線</span></div><button className="primary-button" type="button" onClick={onLaunch}>網站上線 <ChevronRight size={18} /></button></div>
+    </div>
+  )
+}
+
+type LaunchChoice = 'public' | 'brand'
+
+const domainBenefits = [
+  { icon: <ShieldCheck aria-hidden="true" />, title: '建立品牌信任', text: '專屬網域更容易被記住，也讓顧客更放心點擊與分享。' },
+  { icon: <Mail aria-hidden="true" />, title: '保留專業品牌信箱', text: '可延伸 hello@你的品牌網域，對外聯繫更一致。' },
+  { icon: <QrCode aria-hidden="true" />, title: '串接 QR Code 與短網址', text: '同一個品牌網域可延伸到社群、活動與線下素材。' },
+  { icon: <BarChart3 aria-hidden="true" />, title: '追蹤行銷成效', text: '搭配 lihi 的 A/B 測試與連結追蹤，持續優化轉換。' },
+]
+
+function Launch({ draft, onChange, onBack, onReset }: { draft: BusinessDraft; onChange: (draft: BusinessDraft) => void; onBack: () => void; onReset: () => void }) {
+  const [choice, setChoice] = useState<LaunchChoice>('brand')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  async function deploy() {
+    setSubmitting(true)
+    setError('')
+    try {
+      const brandCheckout = await createBrandCheckout(draft, choice)
+      if (choice === 'brand') {
+        const nextDraft = { ...draft, brandCheckout }
+        onChange(nextDraft)
+        saveDraft(nextDraft)
+      }
+      window.location.assign(choice === 'brand' ? brandCheckout.checkoutUrl : brandCheckout.previewUrl)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '網站上線失敗，請稍後再試。')
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="launch-page">
+      <Header studio onReset={onReset} />
+      <main className="launch-main">
+        <button className="back-button launch-back" type="button" onClick={onBack}><ArrowLeft size={17} /> 回到網站設計</button>
+        <header className="launch-heading">
+          <p className="eyebrow">步驟 3 / 3・網站上線</p>
+          <h1>選擇網站上線方式</h1>
+          <p>先用公共網址快速分享，或直接建立屬於自己的品牌網域。</p>
+        </header>
+
+        <section className="launch-options" aria-label="網站上線方式">
+          <button type="button" className={`launch-option ${choice === 'public' ? 'active' : ''}`} onClick={() => setChoice('public')} aria-pressed={choice === 'public'}>
+            <span className="launch-option-icon"><Globe2 aria-hidden="true" /></span>
+            <span className="launch-option-copy"><small>免費・適合先測試</small><strong>部署到公共網域</strong><em>取得可分享的公開網址，保留 7 天並禁止搜尋引擎收錄。</em></span>
+            <span className="choice-mark">{choice === 'public' && <Check size={16} />}</span>
+          </button>
+          <button type="button" className={`launch-option is-recommended ${choice === 'brand' ? 'active' : ''}`} onClick={() => setChoice('brand')} aria-pressed={choice === 'brand'}>
+            <span className="recommend-badge">推薦</span>
+            <span className="launch-option-icon"><Link2 aria-hidden="true" /></span>
+            <span className="launch-option-copy"><small>品牌長期經營</small><strong>部署到屬於自己的品牌網域</strong><em>前往 lihi 搜尋並購買網域；完成後建立正式網站與管理後台。</em></span>
+            <span className="choice-mark">{choice === 'brand' && <Check size={16} />}</span>
+          </button>
+        </section>
+
+        <div className="launch-action">
+          <div><strong>{choice === 'brand' ? '購買網域，第一年網站服務免費' : '7 天公共預覽免費'}</strong><span>{choice === 'brand' ? '下一步會前往 lihiDomain，付款前仍可返回修改。' : '適合先給夥伴或客戶確認，不會被 Google 收錄。'}</span></div>
+          <button className="primary-button" type="button" disabled={submitting} onClick={deploy}>{submitting ? '正在準備…' : choice === 'brand' ? '前往選擇品牌網域' : '部署公共網址'} <ChevronRight size={18} /></button>
+        </div>
+        {error && <p className="field-error launch-error" role="alert">{error}</p>}
+
+        <section className="domain-value" aria-labelledby="domain-value-title">
+          <div className="domain-value-heading"><p>WHY BRAND DOMAIN</p><h2 id="domain-value-title">一個網域，不只是一個網址。</h2><span>它是品牌被記住的名字，也是網站、信箱、社群與每一次行銷活動的共同入口。</span></div>
+          <div className="domain-benefits">{domainBenefits.map((benefit, index) => <article key={benefit.title}><span>0{index + 1}</span>{benefit.icon}<h3>{benefit.title}</h3><p>{benefit.text}</p></article>)}</div>
+          <p className="domain-source">功能內容參考 lihiDomain：網域可自行設定 DNS，並整合短網址、QR Code、A/B 測試與成效追蹤。</p>
+        </section>
+      </main>
     </div>
   )
 }
@@ -371,13 +433,13 @@ export default function App() {
   }, [])
   const existing = useMemo(() => {
     if (demoStage === 'landing' || demoStage === 'importing') return null
-    if (demoStage === 'studio') {
+    if (demoStage === 'studio' || demoStage === 'launch') {
       const demo = createDemoBusiness()
       return demoTemplate ? { ...demo, template: demoTemplate } : demo
     }
     return loadDraft()
   }, [demoStage, demoTemplate])
-  const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : existing ? 'studio' : 'landing')
+  const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : demoStage === 'launch' ? 'launch' : existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'generated'>('demo')
   const [importStep, setImportStep] = useState(0)
@@ -420,6 +482,7 @@ export default function App() {
   }
 
   if (stage === 'importing') return <Importing activeStep={demoStage === 'importing' ? 2 : importStep} />
-  if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReset={reset} />
+  if (stage === 'launch' && draft) return <Launch draft={draft} onChange={setDraft} onBack={() => setStage('studio')} onReset={reset} />
+  if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReset={reset} onLaunch={() => setStage('launch')} />
   return <Landing onGenerate={startGeneration} onDemo={useDemo} initialError={importError} />
 }

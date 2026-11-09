@@ -25,13 +25,19 @@ const cases = [
   { name: 'studio-calm-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['靜謐藝廊', '查看網站', '手機版預覽'] },
   { name: 'studio-compact-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['手作菜單', '查看網站', '手機版預覽'] },
   { name: 'studio-mosaic-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['影像拼貼', '查看網站', '手機版預覽'] },
+  { name: 'launch-desktop', path: '/?demo=launch', width: 1440, height: 1000 },
+  { name: 'launch-mobile', path: '/?demo=launch', width: 390, height: 844 },
 ]
 
 const results = []
 for (const item of cases) {
   const page = await browser.newPage({ viewport: { width: item.width, height: item.height }, deviceScaleFactor: 1 })
   await page.goto(`${baseUrl}${item.path}`, { waitUntil: 'domcontentloaded' })
-  await page.waitForTimeout(1_200)
+  await page.locator('main h1').first().waitFor({ timeout: 15_000 }).catch(async () => {
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.locator('main h1').first().waitFor({ timeout: 15_000 })
+  })
+  await page.waitForTimeout(800)
   for (const label of [...(item.clicks || []), ...(item.click ? [item.click] : [])]) {
     await page.getByRole('button', { name: new RegExp(label) }).click()
     await page.waitForTimeout(500)
@@ -41,12 +47,18 @@ for (const item of cases) {
   let availablePhotos
   if (item.name === 'studio-desktop') {
     const preview = page.frameLocator('iframe[title$="網站預覽"]')
-    const [popup] = await Promise.all([
-      page.waitForEvent('popup'),
+    let popup = await Promise.all([
+      page.waitForEvent('popup', { timeout: 10_000 }),
       preview.getByRole('link', { name: 'LINE 預約諮詢' }).click(),
-    ])
-    previewLinkSafe = page.url().includes('demo=studio')
-    await popup.close()
+    ]).then(([opened]) => opened).catch(() => null)
+    if (!popup) {
+      popup = await Promise.all([
+        page.waitForEvent('popup', { timeout: 10_000 }),
+        preview.getByRole('link', { name: 'LINE 預約諮詢' }).click(),
+      ]).then(([opened]) => opened).catch(() => null)
+    }
+    previewLinkSafe = Boolean(popup) && page.url().includes('demo=studio')
+    await popup?.close()
 
     const lastTemplate = page.getByRole('button', { name: /影像拼貼/ })
     const beforeScroll = await lastTemplate.boundingBox()

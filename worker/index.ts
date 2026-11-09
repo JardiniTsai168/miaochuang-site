@@ -32,6 +32,7 @@ type BrandCheckoutInput = {
   template: string
   expiresAt: number
   html: string
+  launchMode: 'public' | 'brand'
   handoff?: { handoffId: string; slug: string }
 }
 
@@ -125,6 +126,7 @@ function parseBrandCheckoutInput(value: unknown): BrandCheckoutInput {
     template: clean(body.template, 40),
     expiresAt: typeof body.expiresAt === 'number' ? body.expiresAt : 0,
     html: typeof body.html === 'string' ? body.html : '',
+    launchMode: body.launchMode === 'public' ? 'public' : 'brand',
     ...(handoff?.handoffId && /^[a-z0-9-]+$/iu.test(handoff.slug) ? { handoff } : {}),
   }
   if (!input.name || !input.template || !input.expiresAt || !input.html || input.html.length > 2_000_000) {
@@ -175,7 +177,7 @@ async function emdashRequest<T>(path: string, init: RequestInit, env: Env, fetch
   return payload.data
 }
 
-export async function prepareBrandCheckout(input: BrandCheckoutInput, env: Env, fetcher: Fetcher): Promise<{ handoffId: string; slug: string; checkoutUrl: string; createdAt: number }> {
+export async function prepareBrandCheckout(input: BrandCheckoutInput, env: Env, fetcher: Fetcher): Promise<{ handoffId: string; slug: string; checkoutUrl: string; previewUrl: string; createdAt: number }> {
   const collection = clean(env.EMDASH_COLLECTION || 'sites', 60)
   if (!/^[a-z][a-z0-9_-]*$/u.test(collection)) throw new ApiError(503, 'EMDASH_NOT_CONFIGURED', 'EmDash Collection 設定不正確。')
   const slug = input.handoff?.slug || `brand-${crypto.randomUUID().slice(0, 8)}`
@@ -188,7 +190,7 @@ export async function prepareBrandCheckout(input: BrandCheckoutInput, env: Env, 
   let item: EmDashItem
   if (input.handoff) {
     const result = await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(input.handoff.handoffId)}`, {
-      method: 'PUT', body: JSON.stringify({ slug, data }),
+      method: 'PUT', body: JSON.stringify({ slug, status: 'draft', data }),
     }, env, fetcher)
     item = result.item
   } else {
@@ -197,11 +199,17 @@ export async function prepareBrandCheckout(input: BrandCheckoutInput, env: Env, 
     }, env, fetcher)
     item = result.item
   }
+  if (input.launchMode === 'public') {
+    await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(item.id)}/publish`, {
+      method: 'POST', body: JSON.stringify({}),
+    }, env, fetcher)
+  }
   const checkoutUrl = new URL(env.LIHI_DOMAIN_SEARCH_URL || 'https://lihi.io/go/search')
   if (checkoutUrl.protocol !== 'https:') throw new ApiError(503, 'CHECKOUT_NOT_CONFIGURED', '網域購買網址設定不正確。')
   checkoutUrl.searchParams.set('s', input.name)
   checkoutUrl.searchParams.set('source', `miaochuang:${item.id}`)
-  return { handoffId: item.id, slug, checkoutUrl: checkoutUrl.toString(), createdAt: Date.now() }
+  const previewUrl = `${emdashBaseUrl(env.EMDASH_SITE_URL, 'Site URL')}/s/${encodeURIComponent(slug)}`
+  return { handoffId: item.id, slug, checkoutUrl: checkoutUrl.toString(), previewUrl, createdAt: Date.now() }
 }
 
 export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetcher): Promise<GeneratedContent> {

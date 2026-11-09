@@ -30,4 +30,24 @@ describe('brand brief generation', () => {
     expect(result.draft.expiresAt - result.draft.createdAt).toBe(7 * 24 * 60 * 60 * 1000)
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
+
+  it('pairs photos to the submitted industry and service instead of the generic demo pool', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({
+      tagline: '讓每次整理都更像自己', description: '品牌介紹', advantages: brief.advantages,
+    }))
+
+    const salon = await generateBusiness(brief)
+    const cleaning = await generateBusiness({
+      ...brief,
+      industry: '居家清潔／維修服務',
+      brandName: '日日潔淨',
+      offerings: ['居家清潔', '冷氣清洗', '入住清潔'],
+    })
+
+    expect(salon.draft.photos.every((photo) => photo.source === 'stock')).toBe(true)
+    expect(salon.draft.photos.every((photo) => photo.sourceUrl?.includes('unsplash.com'))).toBe(true)
+    expect(salon.draft.photos[0].alt).toContain('美髮')
+    expect(salon.draft.photos.some((photo) => photo.alt.includes('剪髮'))).toBe(true)
+    expect(salon.draft.photos.map((photo) => photo.url)).not.toEqual(cleaning.draft.photos.map((photo) => photo.url))
+  })
 })
