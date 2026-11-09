@@ -1,4 +1,5 @@
 import type { BusinessDraft } from '../types'
+import { createIndustryPhotos } from '../data/industryPhotos'
 
 const KEY = 'miaochuang-draft-v2'
 
@@ -15,6 +16,11 @@ export function loadDraft(now = Date.now()): BusinessDraft | null {
     if (!draft.expiresAt || draft.expiresAt <= now) {
       localStorage.removeItem(KEY)
       return null
+    }
+    if (draft.source === 'generated' && draft.photos.some((photo) => photo.url.includes('/demo/generic/'))) {
+      const migrated = { ...draft, photos: createIndustryPhotos(draft.category, draft.offerings) }
+      saveDraft(migrated)
+      return migrated
     }
     return draft
   } catch {

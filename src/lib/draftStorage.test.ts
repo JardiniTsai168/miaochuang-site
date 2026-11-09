@@ -11,6 +11,14 @@ describe('draft storage', () => {
     expect(loadDraft(2_000)?.name).toBe(draft.name)
   })
 
+  it('upgrades an older generated draft from generic demo photos to its industry pack', () => {
+    const draft = createDemoBusiness(1_000)
+    saveDraft({ ...draft, source: 'generated', category: '美髮', offerings: ['剪髮', '染髮', '頭皮護理'] })
+    const migrated = loadDraft(2_000)
+    expect(migrated?.photos.every((photo) => photo.source === 'stock')).toBe(true)
+    expect(migrated?.photos[0].alt).toContain('美髮')
+  })
+
   it('removes an expired draft', () => {
     const draft = createDemoBusiness(1_000)
     saveDraft({ ...draft, expiresAt: 2_000 })
