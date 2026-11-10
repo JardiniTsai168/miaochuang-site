@@ -343,7 +343,7 @@ img { max-width: 100%; }
 .domain-search-heading { max-width: 760px; }
 .domain-search-heading h1 { margin: 0; color: var(--navy); font-family: "Noto Serif TC", serif; font-size: clamp(2rem, 7vw, 2.75rem); line-height: 1.18; letter-spacing: -.045em; }
 .domain-search-heading > p:last-child { margin: 14px 0 0; color: var(--muted); line-height: 1.7; }
-.name-suggestion { margin-top: 28px; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-sm); }
+.name-suggestion { margin-top: 18px; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-sm); }
 .name-suggestion > div:first-child p { margin: 0 0 5px; color: var(--pink-deep); font: 800 .68rem/1.3 "DM Sans", sans-serif; letter-spacing: .14em; }
 .name-suggestion h2 { margin: 0; color: var(--navy); font-size: 1.1rem; }
 .suggestion-control { margin-top: 15px; display: flex; gap: 10px; }
@@ -355,7 +355,7 @@ img { max-width: 100%; }
 .suggestion-list button.active { border-color: var(--pink-deep); box-shadow: 0 0 0 3px color-mix(in srgb,var(--pink) 12%,transparent); background: var(--pink-pale); }
 .suggestion-list span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font: 800 .94rem/1.4 "DM Sans",sans-serif; }
 .suggestion-list small { color: var(--muted); font-size: .68rem; }
-.domain-query { margin-top: 18px; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-sm); }
+.domain-query { margin-top: 28px; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-sm); }
 .domain-query label { color: var(--navy); font-size: .82rem; font-weight: 900; }
 .domain-query > div { margin-top: 9px; display: grid; grid-template-columns: 38px minmax(0,1fr) auto; align-items: center; border: 1px solid #d9d2da; border-radius: 12px; overflow: hidden; }
 .domain-query > div > svg { justify-self: end; color: var(--pink-deep); }

@@ -72,7 +72,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /選擇網站上線方式/ })).toBeInTheDocument()
   })
 
-  it('shows brand-name suggestions before lihi domain search', async () => {
+  it('shows lihi domain search before brand-name suggestions', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
@@ -85,6 +85,9 @@ describe('App', () => {
     window.history.replaceState({}, '', '/?demo=domain')
     render(<App />)
     expect(screen.getByRole('heading', { name: /找到讓人記得住的品牌網域/ })).toBeInTheDocument()
+    const searchForm = screen.getByRole('textbox', { name: '搜尋你的品牌網域' }).closest('form')
+    const suggestionSection = screen.getByRole('heading', { name: '你的品牌名稱' }).closest('section')
+    expect(searchForm?.nextElementSibling).toBe(suggestionSection)
     expect(await screen.findByRole('button', { name: /sunnywalk.com/ })).toBeInTheDocument()
     expect(screen.getByText('測試期間不限推薦次數')).toBeInTheDocument()
     vi.unstubAllGlobals()

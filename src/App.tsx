@@ -826,6 +826,17 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
           <h1>找到讓人記得住的品牌網域</h1>
           <p>我們先依品牌名稱提供三個方向；選好後會前往 lihi 確認是否可註冊。</p>
         </header>
+        <form className="domain-query" onSubmit={continueToLihi}>
+          <label htmlFor="domain-query">搜尋你的品牌網域</label>
+          <div>
+            <Search aria-hidden="true" />
+            <input id="domain-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="例如 yourbrand.com" autoComplete="off" />
+            <button className="primary-button" disabled={submitting}>
+              {submitting ? '準備中…' : '前往 lihi 查詢'} <ArrowRight size={17} />
+            </button>
+          </div>
+          <p>實際價格與可註冊狀態，以 lihi 搜尋結果為準。</p>
+        </form>
         <section className="name-suggestion" aria-labelledby="suggestion-title">
           <div>
             <p>NAME SUGGESTION</p>
@@ -847,17 +858,6 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
             ))}
           </div>
         </section>
-        <form className="domain-query" onSubmit={continueToLihi}>
-          <label htmlFor="domain-query">搜尋你的品牌網域</label>
-          <div>
-            <Search aria-hidden="true" />
-            <input id="domain-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="例如 yourbrand.com" autoComplete="off" />
-            <button className="primary-button" disabled={submitting}>
-              {submitting ? '準備中…' : '前往 lihi 查詢'} <ArrowRight size={17} />
-            </button>
-          </div>
-          <p>實際價格與可註冊狀態，以 lihi 搜尋結果為準。</p>
-        </form>
         {error && (
           <p className="field-error domain-error" role="alert">
             {error}
