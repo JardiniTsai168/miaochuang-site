@@ -262,7 +262,8 @@ function parseDomainSuggestionInput(value: unknown): DomainSuggestionInput {
 async function consumeSuggestionQuota(request: Request, env: Env): Promise<number> {
   if (!env.SUGGESTION_LIMITER) throw new ApiError(503, 'RATE_LIMIT_NOT_CONFIGURED', '網域推薦服務尚未完成設定。')
   const ip = request.headers.get('CF-Connecting-IP') || 'local-development'
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`miaochuang-domain:${ip}`))
+  // v2 intentionally starts a fresh bucket after the temporary unlimited test period.
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`miaochuang-domain:v2:${ip}`))
   const key = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
   const response = await env.SUGGESTION_LIMITER.get(env.SUGGESTION_LIMITER.idFromName(key)).fetch('https://limiter.internal/consume', { method: 'POST' })
   const result = (await response.json()) as {
