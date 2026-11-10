@@ -8,7 +8,9 @@ export type Env = {
   EMDASH_API_TOKEN?: string
   EMDASH_COLLECTION?: string
   LIHI_DOMAIN_SEARCH_URL?: string
-  EMDASH_SERVICE?: { fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> }
+  EMDASH_SERVICE?: {
+    fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>
+  }
   SUGGESTION_LIMITER?: DurableObjectNamespace
 }
 
@@ -28,10 +30,33 @@ type GeneratedContent = {
   advantages: [string, string, string]
 }
 
+type SiteContent = {
+  category: string
+  tagline: string
+  description: string
+  address: string
+  phone: string
+  googleMapsUrl: string
+  lineUrl: string
+  instagramUrl: string
+  videoUrl: string
+  services: string[]
+  offerings: string[]
+  hours: Array<{ label: string; value: string }>
+  photos: Array<{
+    id: string
+    role: string
+    url: string
+    alt: string
+    selected: boolean
+  }>
+}
+
 type BrandCheckoutInput = {
   name: string
   template: string
   expiresAt: number
+  site: SiteContent
   html: string
   launchMode: 'public' | 'brand'
   domainQuery?: string
@@ -43,7 +68,11 @@ type DomainSuggestionInput = { brandName: string }
 type EmDashItem = { id: string; slug: string | null }
 
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string) {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+  ) {
     super(message)
   }
 }
@@ -72,7 +101,10 @@ function parseBrief(value: unknown): BrandBrief {
 function allowedOrigin(request: Request, env: Env): boolean {
   const origin = request.headers.get('origin')
   if (!origin) return true
-  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean)
+  const allowed = (env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
   return allowed.length === 0 || allowed.includes(origin)
 }
 
@@ -94,7 +126,10 @@ const contentSchema = {
   type: 'object',
   properties: {
     tagline: { type: 'string', description: '20 個繁體中文字以內的網站主標題' },
-    description: { type: 'string', description: '80 到 140 個繁體中文字的品牌介紹' },
+    description: {
+      type: 'string',
+      description: '80 到 140 個繁體中文字的品牌介紹',
+    },
     advantages: {
       type: 'array',
       description: '依使用者三個優勢分別改寫的短標題，不得新增事實',
@@ -123,19 +158,77 @@ function parseGenerated(value: unknown): GeneratedContent {
 
 function parseBrandCheckoutInput(value: unknown): BrandCheckoutInput {
   const body = (value || {}) as Record<string, unknown>
-  const rawHandoff = body.handoff && typeof body.handoff === 'object' ? body.handoff as Record<string, unknown> : undefined
-  const handoff = rawHandoff ? { handoffId: clean(rawHandoff.handoffId, 120), slug: clean(rawHandoff.slug, 120) } : undefined
+  const rawSite = body.site && typeof body.site === 'object' ? (body.site as Record<string, unknown>) : {}
+  const services = Array.isArray(rawSite.services)
+    ? rawSite.services
+        .map((item) => clean(item, 160))
+        .filter(Boolean)
+        .slice(0, 3)
+    : []
+  const offerings = Array.isArray(rawSite.offerings)
+    ? rawSite.offerings
+        .map((item) => clean(item, 160))
+        .filter(Boolean)
+        .slice(0, 3)
+    : []
+  const hours = Array.isArray(rawSite.hours)
+    ? rawSite.hours
+        .slice(0, 7)
+        .map((item) => {
+          const row = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
+          return { label: clean(row.label, 80), value: clean(row.value, 120) }
+        })
+        .filter((item) => item.label || item.value)
+    : []
+  const photos = Array.isArray(rawSite.photos)
+    ? rawSite.photos
+        .slice(0, 5)
+        .map((item, index) => {
+          const photo = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
+          const url = typeof photo.url === 'string' ? photo.url.trim().slice(0, 1_500_000) : ''
+          return {
+            id: clean(photo.id, 120) || `photo-${index + 1}`,
+            role: clean(photo.role, 40),
+            url,
+            alt: clean(photo.alt, 300),
+            selected: photo.selected !== false,
+          }
+        })
+        .filter((item) => item.url)
+    : []
+  const rawHandoff = body.handoff && typeof body.handoff === 'object' ? (body.handoff as Record<string, unknown>) : undefined
+  const handoff = rawHandoff
+    ? {
+        handoffId: clean(rawHandoff.handoffId, 120),
+        slug: clean(rawHandoff.slug, 120),
+      }
+    : undefined
   const input: BrandCheckoutInput = {
     name: clean(body.name, 80),
     template: clean(body.template, 40),
     expiresAt: typeof body.expiresAt === 'number' ? body.expiresAt : 0,
+    site: {
+      category: clean(rawSite.category, 120),
+      tagline: clean(rawSite.tagline, 160),
+      description: clean(rawSite.description, 1200),
+      address: clean(rawSite.address, 300),
+      phone: clean(rawSite.phone, 80),
+      googleMapsUrl: clean(rawSite.googleMapsUrl, 600),
+      lineUrl: clean(rawSite.lineUrl, 600),
+      instagramUrl: clean(rawSite.instagramUrl, 600),
+      videoUrl: clean(rawSite.videoUrl, 600),
+      services,
+      offerings,
+      hours,
+      photos,
+    },
     html: typeof body.html === 'string' ? body.html : '',
     launchMode: body.launchMode === 'public' ? 'public' : 'brand',
     domainQuery: clean(body.domainQuery, 120),
     ...(handoff?.handoffId && /^[a-z0-9-]+$/iu.test(handoff.slug) ? { handoff } : {}),
   }
-  if (!input.name || !input.template || !input.expiresAt || !input.html || input.html.length > 2_000_000) {
-    throw new ApiError(400, 'INVALID_BRAND_CHECKOUT', '品牌資料不完整或網站內容超過大小限制。')
+  if (!input.name || !['marketing', 'portfolio', 'blog', 'starter'].includes(input.template) || !input.expiresAt || !input.html || input.html.length > 2_000_000 || !input.site.category || !input.site.tagline || !input.site.description || input.site.offerings.length === 0) {
+    throw new ApiError(400, 'INVALID_BRAND_CHECKOUT', '品牌資料不完整或版型不正確。')
   }
   return input
 }
@@ -153,7 +246,10 @@ async function consumeSuggestionQuota(request: Request, env: Env): Promise<numbe
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`miaochuang-domain:${ip}`))
   const key = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
   const response = await env.SUGGESTION_LIMITER.get(env.SUGGESTION_LIMITER.idFromName(key)).fetch('https://limiter.internal/consume', { method: 'POST' })
-  const result = await response.json() as { allowed: boolean; remaining: number }
+  const result = (await response.json()) as {
+    allowed: boolean
+    remaining: number
+  }
   if (!result.allowed) throw new ApiError(429, 'SUGGESTION_LIMIT_REACHED', '這個網路已使用 5 次重新推薦，請直接搜尋喜歡的網域名稱。')
   return result.remaining
 }
@@ -172,18 +268,34 @@ function emdashBaseUrl(value: string | undefined, variable: string): string {
 async function emdashRequest<T>(path: string, init: RequestInit, env: Env, fetcher: Fetcher): Promise<T> {
   if (!env.EMDASH_API_TOKEN) throw new ApiError(503, 'EMDASH_NOT_CONFIGURED', 'EmDash API Token 尚未設定。')
   const targetUrl = `${emdashBaseUrl(env.EMDASH_SITE_URL, 'Site URL')}${path}`
-  const response = await (env.EMDASH_SERVICE ? env.EMDASH_SERVICE.fetch(targetUrl, {
-    ...init,
-    headers: { Authorization: `Bearer ${env.EMDASH_API_TOKEN}`, 'Content-Type': 'application/json', ...init.headers },
-  }) : fetcher(targetUrl, {
-    ...init,
-    headers: { Authorization: `Bearer ${env.EMDASH_API_TOKEN}`, 'Content-Type': 'application/json', ...init.headers },
-  })).catch(() => null)
+  const response = await (
+    env.EMDASH_SERVICE
+      ? env.EMDASH_SERVICE.fetch(targetUrl, {
+          ...init,
+          headers: {
+            Authorization: `Bearer ${env.EMDASH_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            ...init.headers,
+          },
+        })
+      : fetcher(targetUrl, {
+          ...init,
+          headers: {
+            Authorization: `Bearer ${env.EMDASH_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            ...init.headers,
+          },
+        })
+  ).catch(() => null)
   if (!response) throw new ApiError(502, 'EMDASH_UNAVAILABLE', '目前無法連線到 EmDash。')
   const responseText = await response.text()
   const payload = (() => {
     try {
-      return JSON.parse(responseText) as { success?: boolean; data?: T; error?: { code?: string; message?: string } }
+      return JSON.parse(responseText) as {
+        success?: boolean
+        data?: T
+        error?: { code?: string; message?: string }
+      }
     } catch {
       return null
     }
@@ -200,52 +312,107 @@ async function emdashRequest<T>(path: string, init: RequestInit, env: Env, fetch
   return payload.data
 }
 
-export async function prepareBrandCheckout(input: BrandCheckoutInput, env: Env, fetcher: Fetcher): Promise<{ handoffId: string; slug: string; checkoutUrl: string; previewUrl: string; createdAt: number }> {
+export async function prepareBrandCheckout(
+  input: BrandCheckoutInput,
+  env: Env,
+  fetcher: Fetcher,
+): Promise<{
+  handoffId: string
+  slug: string
+  checkoutUrl: string
+  previewUrl: string
+  createdAt: number
+}> {
   const collection = clean(env.EMDASH_COLLECTION || 'sites', 60)
   if (!/^[a-z][a-z0-9_-]*$/u.test(collection)) throw new ApiError(503, 'EMDASH_NOT_CONFIGURED', 'EmDash Collection 設定不正確。')
   const slug = input.handoff?.slug || `brand-${crypto.randomUUID().slice(0, 8)}`
   const data = {
     name: input.name,
-    template: input.template,
+    template: 'editorial',
+    template_key: input.template,
     html: input.html,
+    category: input.site.category,
+    tagline: input.site.tagline,
+    description: input.site.description,
+    address: input.site.address,
+    phone: input.site.phone,
+    google_maps_url: input.site.googleMapsUrl,
+    line_url: input.site.lineUrl,
+    instagram_url: input.site.instagramUrl,
+    video_url: input.site.videoUrl,
+    service_1: input.site.services[0] || '',
+    service_2: input.site.services[1] || '',
+    service_3: input.site.services[2] || '',
+    offering_1: input.site.offerings[0] || '',
+    offering_2: input.site.offerings[1] || '',
+    offering_3: input.site.offerings[2] || '',
+    hours: input.site.hours.map((item) => `${item.label}｜${item.value}`).join('\n'),
+    photo_1_url: input.site.photos[0]?.url || '',
+    photo_1_alt: input.site.photos[0]?.alt || '',
+    photo_2_url: input.site.photos[1]?.url || '',
+    photo_2_alt: input.site.photos[1]?.alt || '',
+    photo_3_url: input.site.photos[2]?.url || '',
+    photo_3_alt: input.site.photos[2]?.alt || '',
+    photo_4_url: input.site.photos[3]?.url || '',
+    photo_4_alt: input.site.photos[3]?.alt || '',
+    photo_5_url: input.site.photos[4]?.url || '',
+    photo_5_alt: input.site.photos[4]?.alt || '',
     expires_at: new Date(input.expiresAt).toISOString(),
   }
   let item: EmDashItem
   if (input.handoff) {
-    const result = await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(input.handoff.handoffId)}`, {
-      method: 'PUT', body: JSON.stringify({ slug, status: 'draft', data }),
-    }, env, fetcher)
+    const result = await emdashRequest<{ item: EmDashItem }>(
+      `/_emdash/api/content/${collection}/${encodeURIComponent(input.handoff.handoffId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ slug, status: 'draft', data }),
+      },
+      env,
+      fetcher,
+    )
     item = result.item
   } else {
-    const result = await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}`, {
-      method: 'POST', body: JSON.stringify({ slug, status: 'draft', data }),
-    }, env, fetcher)
+    const result = await emdashRequest<{ item: EmDashItem }>(
+      `/_emdash/api/content/${collection}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ slug, status: 'draft', data }),
+      },
+      env,
+      fetcher,
+    )
     item = result.item
   }
   if (input.launchMode === 'public') {
-    await emdashRequest<{ item: EmDashItem }>(`/_emdash/api/content/${collection}/${encodeURIComponent(item.id)}/publish`, {
-      method: 'POST', body: JSON.stringify({}),
-    }, env, fetcher)
+    await emdashRequest<{ item: EmDashItem }>(
+      `/_emdash/api/content/${collection}/${encodeURIComponent(item.id)}/publish`,
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      },
+      env,
+      fetcher,
+    )
   }
   const checkoutUrl = new URL(env.LIHI_DOMAIN_SEARCH_URL || 'https://lihi.io/go/search')
   if (checkoutUrl.protocol !== 'https:') throw new ApiError(503, 'CHECKOUT_NOT_CONFIGURED', '網域購買網址設定不正確。')
   checkoutUrl.searchParams.set('s', input.domainQuery || input.name)
   checkoutUrl.searchParams.set('source', `miaochuang:${item.id}`)
   const previewUrl = `${emdashBaseUrl(env.EMDASH_SITE_URL, 'Site URL')}/s/${encodeURIComponent(slug)}`
-  return { handoffId: item.id, slug, checkoutUrl: checkoutUrl.toString(), previewUrl, createdAt: Date.now() }
+  return {
+    handoffId: item.id,
+    slug,
+    checkoutUrl: checkoutUrl.toString(),
+    previewUrl,
+    createdAt: Date.now(),
+  }
 }
 
 export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetcher): Promise<GeneratedContent> {
   if (!env.OPENROUTER_API_KEY) throw new ApiError(503, 'SERVICE_NOT_CONFIGURED', 'AI 生成服務尚未完成設定。')
   const primary = env.OPENROUTER_TEXT_MODEL?.trim() || 'openai/gpt-5.6-luna'
   const fallback = env.OPENROUTER_FALLBACK_MODEL?.trim() || 'anthropic/claude-haiku-5.5'
-  const facts = [
-    `產業：${brief.industry}`,
-    `品牌：${brief.brandName}`,
-    `三個優勢：${brief.advantages.join('、')}`,
-    `主要服務／商品：${brief.offerings.filter(Boolean).join('、')}`,
-    `營業時間：${brief.hours || '未提供'}`,
-  ].join('\n')
+  const facts = [`產業：${brief.industry}`, `品牌：${brief.brandName}`, `三個優勢：${brief.advantages.join('、')}`, `主要服務／商品：${brief.offerings.filter(Boolean).join('、')}`, `營業時間：${brief.hours || '未提供'}`].join('\n')
   const response = await fetcher('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -267,7 +434,14 @@ export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetc
           content: `${facts}\n請以 JSON 格式產出一個 20 字內主標題、80–140 字品牌介紹，以及三個依原始優勢逐項改寫的短標題。`,
         },
       ],
-      response_format: { type: 'json_schema', json_schema: { name: 'brand_site_content', strict: true, schema: contentSchema } },
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'brand_site_content',
+          strict: true,
+          schema: contentSchema,
+        },
+      },
       provider: { require_parameters: true },
       reasoning: { effort: 'none' },
       max_tokens: 1_200,
@@ -276,7 +450,9 @@ export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetc
 
   if (!response) throw new ApiError(502, 'UPSTREAM_UNAVAILABLE', 'AI 服務目前無法連線，請稍後再試。')
   if (!response.ok) {
-    const errorPayload = await response.json().catch(() => null) as { error?: { code?: string | number; message?: string } } | null
+    const errorPayload = (await response.json().catch(() => null)) as {
+      error?: { code?: string | number; message?: string }
+    } | null
     console.error('OpenRouter request failed', {
       status: response.status,
       code: errorPayload?.error?.code || 'UNKNOWN',
@@ -284,9 +460,15 @@ export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetc
     })
     throw new ApiError(502, 'UPSTREAM_ERROR', 'AI 服務目前忙碌或額度不足，請稍後再試。')
   }
-  const payload = await response.json().catch(() => null) as {
-    choices?: Array<{ finish_reason?: string; message?: { content?: string; reasoning?: string } }>
-    usage?: { completion_tokens?: number; completion_tokens_details?: { reasoning_tokens?: number } }
+  const payload = (await response.json().catch(() => null)) as {
+    choices?: Array<{
+      finish_reason?: string
+      message?: { content?: string; reasoning?: string }
+    }>
+    usage?: {
+      completion_tokens?: number
+      completion_tokens_details?: { reasoning_tokens?: number }
+    }
   } | null
   const output = payload?.choices?.[0]?.message?.content
   if (!output) {
@@ -323,20 +505,41 @@ export async function suggestDomains(input: DomainSuggestionInput, env: Env, fet
       reasoning: { effort: 'none' },
       max_tokens: 300,
       messages: [
-        { role: 'system', content: '你是品牌命名與網域顧問。根據品牌名稱提出 3 個簡短、易拼、容易記住的 ASCII 網域名稱。不可宣稱可註冊，避免商標字、連字號與數字。只能輸出 JSON。' },
+        {
+          role: 'system',
+          content: '你是品牌命名與網域顧問。根據品牌名稱提出 3 個簡短、易拼、容易記住的 ASCII 網域名稱。不可宣稱可註冊，避免商標字、連字號與數字。只能輸出 JSON。',
+        },
         { role: 'user', content: `品牌名稱：${input.brandName}` },
       ],
       response_format: {
         type: 'json_schema',
         json_schema: {
-          name: 'domain_suggestions', strict: true,
-          schema: { type: 'object', properties: { domains: { type: 'array', items: { type: 'string', pattern: '^[a-z0-9-]+\\.(com|tw|com\\.tw|co)$' }, minItems: 3, maxItems: 3 } }, required: ['domains'], additionalProperties: false },
+          name: 'domain_suggestions',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              domains: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  pattern: '^[a-z0-9-]+\\.(com|tw|com\\.tw|co)$',
+                },
+                minItems: 3,
+                maxItems: 3,
+              },
+            },
+            required: ['domains'],
+            additionalProperties: false,
+          },
         },
       },
     }),
   }).catch(() => null)
   if (!response?.ok) throw new ApiError(502, 'SUGGESTION_FAILED', '目前無法產生網域建議，請稍後再試。')
-  const payload = await response.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }> } | null
+  const payload = (await response.json().catch(() => null)) as {
+    choices?: Array<{ message?: { content?: string } }>
+  } | null
   const content = payload?.choices?.[0]?.message?.content
   if (!content) throw new ApiError(502, 'SUGGESTION_FAILED', '網域推薦沒有回傳結果。')
   const decoded = JSON.parse(content) as { domains?: unknown[] }
@@ -347,7 +550,11 @@ export async function suggestDomains(input: DomainSuggestionInput, env: Env, fet
 
 export async function handleRequest(request: Request, env: Env, fetcher: Fetcher = fetch): Promise<Response> {
   try {
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) })
+    if (request.method === 'OPTIONS')
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders(request, env),
+      })
     const origin = request.headers.get('origin')
     if (origin && !allowedOrigin(request, env)) throw new ApiError(403, 'ORIGIN_NOT_ALLOWED', '這個網站來源不允許使用生成服務。')
     const url = new URL(request.url)
@@ -358,7 +565,10 @@ export async function handleRequest(request: Request, env: Env, fetcher: Fetcher
     }
     if (request.method === 'POST' && url.pathname === '/api/domain-suggestions') {
       const remaining = await consumeSuggestionQuota(request, env)
-      return json(request, env, { suggestions: await suggestDomains(parseDomainSuggestionInput(body), env, fetcher), remaining })
+      return json(request, env, {
+        suggestions: await suggestDomains(parseDomainSuggestionInput(body), env, fetcher),
+        remaining,
+      })
     }
     if (request.method === 'POST' && url.pathname === '/api/brand-checkout') {
       return json(request, env, await prepareBrandCheckout(parseBrandCheckoutInput(body), env, fetcher))
@@ -371,13 +581,15 @@ export async function handleRequest(request: Request, env: Env, fetcher: Fetcher
   }
 }
 
-export default { fetch: (request: Request, env: Env) => handleRequest(request, env) } satisfies ExportedHandler<Env>
+export default {
+  fetch: (request: Request, env: Env) => handleRequest(request, env),
+} satisfies ExportedHandler<Env>
 
 export class SuggestionLimiter implements DurableObject {
   constructor(private readonly state: DurableObjectState) {}
 
   async fetch(): Promise<Response> {
-    const count = await this.state.storage.get<number>('count') || 0
+    const count = (await this.state.storage.get<number>('count')) || 0
     if (count >= 5) return Response.json({ allowed: false, remaining: 0 })
     const next = count + 1
     await this.state.storage.put('count', next)

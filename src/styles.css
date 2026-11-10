@@ -229,36 +229,31 @@ img { max-width: 100%; }
 .template-thumb { position: relative; grid-column: 1 / -1; width: 100%; height: 122px; overflow: hidden; display: block; border-radius: 7px; background: #f4eee7; }
 .template-thumb img { position: absolute; z-index: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
 .template-thumb i { position: absolute; z-index: 1; display: block; background: var(--template-accent); }
-.template-thumb.is-editorial img.thumb-photo-1 { inset: 8px 8px 8px 39%; width: calc(61% - 8px); height: calc(100% - 16px); filter: brightness(.82) saturate(.7); }
-.template-thumb.is-editorial img:not(.thumb-photo-1) { display:none; }
-.template-thumb.is-editorial i:nth-of-type(1) { left: 10px; top: 26px; width: 44%; height: 44px; background: #fffaf3; border-block:1px solid #2f2925; }
-.template-thumb.is-editorial i:nth-of-type(2) { left: 16px; top: 36px; width: 31%; height: 8px; }
-.template-thumb.is-editorial i:nth-of-type(3) { left: 16px; top: 52px; width: 22%; height: 4px; background: #b9aea5; }
-.template-thumb.is-vivid { background: #fff3e8; }
-.template-thumb.is-vivid img.thumb-photo-1 { inset: 0 0 0 46%; width: 54%; filter: brightness(.72) saturate(.9); }
-.template-thumb.is-vivid img:not(.thumb-photo-1) { display:none; }
-.template-thumb.is-vivid i:nth-of-type(1) { left: 7px; top: 13px; width: 54px; height: 22px; transform: rotate(-2deg); }
-.template-thumb.is-vivid i:nth-of-type(2) { left: 7px; width: 40px; bottom: 12px; height: 22px; background: #202954; }
-.template-thumb.is-vivid i:nth-of-type(3) { right: 7px; width: 52px; bottom: 7px; height: 14px; background: #f0c94c; }
-.template-thumb.is-calm { background: #edf1ec; }
-.template-thumb.is-calm img.thumb-photo-1 { inset: 9px 9px 9px 48%; width: calc(52% - 9px); height: calc(100% - 18px); filter: saturate(.5); }
-.template-thumb.is-calm img.thumb-photo-2 { left: 42%; bottom: 16px; width: 24%; height: 38%; border:3px solid #edf1ec; filter:saturate(.45); }
-.template-thumb.is-calm img.thumb-photo-3 { display:none; }
-.template-thumb.is-calm i:nth-of-type(1) { right: 6px; top: 6px; width: 30px; height: 30px; border: 1px solid rgba(255,255,255,.8); background: transparent; }
-.template-thumb.is-calm i:nth-of-type(2) { left: 10px; width: 42px; top: 28px; height: 4px; }
-.template-thumb.is-calm i:nth-of-type(3) { left: 10px; width: 28px; top: 39px; height: 3px; background: #9ba59d; }
-.template-thumb.is-compact { background: #f7f4ed; }
-.template-thumb.is-compact img.thumb-photo-1 { right: 8px; top: 8px; width: 39%; height: calc(100% - 16px); }
-.template-thumb.is-compact img:not(.thumb-photo-1) { display:none; }
-.template-thumb.is-compact i:nth-of-type(1) { inset: 8px 44% 8px 8px; background: #f7f4ed; border: 1px solid #315d68; }
-.template-thumb.is-compact i:nth-of-type(2) { left: 15px; top: 18px; width: 38px; height: 5px; }
-.template-thumb.is-compact i:nth-of-type(3) { left: 15px; top: 31px; width: 25px; height: 3px; background: #9caaa7; }
-.template-thumb.is-mosaic { background: #f4edf2; }
-.template-thumb.is-mosaic img.thumb-photo-1 { left: 5px; top: 8px; width: 58%; height: 106px; border: 4px solid #fff; transform:rotate(-1deg); }
-.template-thumb.is-mosaic img.thumb-photo-2 { right: 5px; top: 5px; width: 35%; height: 53px; border:3px solid #fff; transform:rotate(1deg); }
-.template-thumb.is-mosaic img.thumb-photo-3 { right: 7px; bottom: 5px; width: 38%; height: 55px; border:3px solid #fff; transform:rotate(-1deg); }
-.template-thumb.is-mosaic i:nth-of-type(1),.template-thumb.is-mosaic i:nth-of-type(2) { display:none; }
-.template-thumb.is-mosaic i:nth-of-type(3) { left: 52px; top: 1px; width: 30px; height: 8px; background: #eadfc9; transform: rotate(-4deg); }
+.template-thumb.is-marketing { background: #f1eee7; }
+.template-thumb.is-marketing img.thumb-photo-1 { inset: 38px 8px 8px; width: calc(100% - 16px); height: calc(100% - 46px); border-radius: 8px; filter: brightness(.82) saturate(.72); }
+.template-thumb.is-marketing img:not(.thumb-photo-1) { display: none; }
+.template-thumb.is-marketing i:nth-of-type(1) { left: 14%; top: 11px; width: 72%; height: 12px; border-radius: 999px; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.1); }
+.template-thumb.is-marketing i:nth-of-type(2) { left: 25%; top: 29px; width: 50%; height: 4px; border-radius: 999px; }
+.template-thumb.is-marketing i:nth-of-type(3) { display: none; }
+.template-thumb.is-portfolio { background: #f2f0eb; }
+.template-thumb.is-portfolio img.thumb-photo-1 { left: 7px; top: 28px; width: calc(50% - 10px); height: 86px; filter: saturate(.7); }
+.template-thumb.is-portfolio img.thumb-photo-2 { right: 7px; top: 28px; width: calc(50% - 10px); height: 54px; filter: saturate(.7); }
+.template-thumb.is-portfolio img.thumb-photo-3 { right: 7px; bottom: 8px; width: calc(50% - 10px); height: 27px; filter: saturate(.7); }
+.template-thumb.is-portfolio i:nth-of-type(1) { inset: 10px 7px auto; height: 1px; background: #111; }
+.template-thumb.is-portfolio i:nth-of-type(2) { left: 7px; top: 16px; width: 34px; height: 5px; background: #111; }
+.template-thumb.is-portfolio i:nth-of-type(3) { display: none; }
+.template-thumb.is-blog { background: #f8f2e7; }
+.template-thumb.is-blog img.thumb-photo-1 { left: 7px; top: 31px; width: 55%; height: 83px; filter: sepia(.12) saturate(.8); }
+.template-thumb.is-blog img:not(.thumb-photo-1) { display: none; }
+.template-thumb.is-blog i:nth-of-type(1) { left: 7px; right: 7px; top: 12px; height: 2px; background: #241d18; box-shadow: 0 5px 0 #241d18; }
+.template-thumb.is-blog i:nth-of-type(2) { right: 10px; top: 43px; width: 32%; height: 8px; background: #9b3d24; }
+.template-thumb.is-blog i:nth-of-type(3) { right: 10px; top: 59px; width: 27%; height: 4px; background: #8f8276; }
+.template-thumb.is-starter { background: #fff; }
+.template-thumb.is-starter img.thumb-photo-1 { right: 8px; top: 27px; width: 43%; height: 87px; border-radius: 6px; }
+.template-thumb.is-starter img:not(.thumb-photo-1) { display: none; }
+.template-thumb.is-starter i:nth-of-type(1) { left: 9px; top: 12px; width: 42px; height: 6px; background: #172033; }
+.template-thumb.is-starter i:nth-of-type(2) { left: 9px; top: 42px; width: 43%; height: 18px; background: #3157d5; }
+.template-thumb.is-starter i:nth-of-type(3) { left: 9px; top: 69px; width: 34%; height: 5px; background: #aab2c0; }
 .template-switcher button > div { display: flex; flex-direction: column; gap: 2px; }
 .template-switcher strong { color: var(--navy); font-size: .9rem; }
 .template-switcher small { color: var(--muted); font-size: .68rem; }

@@ -11,17 +11,27 @@ type GeneratedContent = {
 }
 
 export class GenerationError extends Error {
-  constructor(message: string, public code = 'GENERATION_FAILED') {
+  constructor(
+    message: string,
+    public code = 'GENERATION_FAILED',
+  ) {
     super(message)
   }
 }
 
 function parseHours(value = ''): BusinessHours[] {
-  return value.split('\n').map((line) => line.trim()).filter(Boolean).map((line, index) => {
-    const separator = line.search(/[:：]/u)
-    if (separator < 0) return { label: index === 0 ? '營業時間' : '', value: line }
-    return { label: line.slice(0, separator).trim(), value: line.slice(separator + 1).trim() }
-  })
+  return value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const separator = line.search(/[:：]/u)
+      if (separator < 0) return { label: index === 0 ? '營業時間' : '', value: line }
+      return {
+        label: line.slice(0, separator).trim(),
+        value: line.slice(separator + 1).trim(),
+      }
+    })
 }
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
@@ -31,7 +41,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   }).catch(() => null)
   if (!response) throw new GenerationError('目前無法連線到 AI 生成服務，請稍後再試。', 'SERVICE_UNAVAILABLE')
-  const payload = await response.json().catch(() => null) as (T & { error?: { code?: string; message?: string } }) | null
+  const payload = (await response.json().catch(() => null)) as (T & { error?: { code?: string; message?: string } }) | null
   if (!response.ok) throw new GenerationError(payload?.error?.message || '網站內容生成失敗，請稍後再試。', payload?.error?.code)
   if (!payload) throw new GenerationError('生成服務回傳的資料格式不正確。', 'INVALID_RESPONSE')
   return payload
@@ -72,8 +82,8 @@ export async function generateBusiness(brief: BrandBrief): Promise<ImportResult>
     hours: parseHours(brief.hours),
     photos: createIndustryPhotos(brief.industry.trim(), brief.offerings),
     reviews: [],
-    template: 'editorial',
-    accent: '#B85D3F',
+    template: 'marketing',
+    accent: '#171717',
     regenerationCount: 0,
     createdAt: now,
     expiresAt: now + 30 * DAY,

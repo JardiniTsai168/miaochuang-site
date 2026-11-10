@@ -73,7 +73,15 @@ describe('App', () => {
   })
 
   it('shows brand-name suggestions before lihi domain search', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ suggestions: ['sunnywalk.com', 'sunnywalk.tw', 'sunnywalkcafe.com'], remaining: 4 })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({
+          suggestions: ['sunnywalk.com', 'sunnywalk.tw', 'sunnywalkcafe.com'],
+          remaining: 4,
+        }),
+      ),
+    )
     window.history.replaceState({}, '', '/?demo=domain')
     render(<App />)
     expect(screen.getByRole('heading', { name: /找到讓人記得住的品牌網域/ })).toBeInTheDocument()
@@ -83,23 +91,24 @@ describe('App', () => {
   })
 
   it('opens a requested template directly for review', () => {
-    window.history.replaceState({}, '', '/?demo=studio&template=mosaic')
+    window.history.replaceState({}, '', '/?demo=studio&template=portfolio')
     render(<App />)
-    expect(screen.getByRole('button', { name: /作品集/ })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('作品集', { selector: '.template-detail strong' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Portfolio/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Portfolio', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
-  it('makes all five website templates visible and selectable', async () => {
+  it('makes all four official EmDash templates visible and selectable', async () => {
     const user = userEvent.setup()
     saveDraft(createDemoBusiness())
     render(<App />)
-    expect(screen.getByRole('heading', { name: /先挑一個最像你店裡的版型/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /在地店舖/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /作品集/ })).toBeInTheDocument()
-    const vivid = screen.getByRole('button', { name: /醒目企劃/ })
-    await user.click(vivid)
-    expect(vivid).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('醒目企劃', { selector: '.template-detail strong' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /選擇網站的內容結構/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Marketing/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Portfolio/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Blog/ })).toBeInTheDocument()
+    const starter = screen.getByRole('button', { name: /Starter/ })
+    await user.click(starter)
+    expect(starter).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Starter', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
   it('offers five replaceable website image slots', async () => {

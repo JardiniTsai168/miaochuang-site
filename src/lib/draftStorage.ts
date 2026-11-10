@@ -1,7 +1,15 @@
-import type { BusinessDraft } from '../types'
+import type { BusinessDraft, TemplateId } from '../types'
 import { createIndustryPhotos } from '../data/industryPhotos'
 
 const KEY = 'miaochuang-draft-v2'
+const currentTemplates = new Set<TemplateId>(['marketing', 'portfolio', 'blog', 'starter'])
+const legacyTemplates: Record<string, TemplateId> = {
+  editorial: 'blog',
+  vivid: 'marketing',
+  calm: 'starter',
+  compact: 'starter',
+  mosaic: 'portfolio',
+}
 
 export function saveDraft(draft: BusinessDraft): void {
   localStorage.setItem(KEY, JSON.stringify(draft))
@@ -17,8 +25,13 @@ export function loadDraft(now = Date.now()): BusinessDraft | null {
       localStorage.removeItem(KEY)
       return null
     }
-    if (draft.source === 'generated' && draft.photos.some((photo) => photo.url.includes('/demo/generic/'))) {
-      const migrated = { ...draft, photos: createIndustryPhotos(draft.category, draft.offerings) }
+    const template = currentTemplates.has(draft.template) ? draft.template : legacyTemplates[String(draft.template)] || 'marketing'
+    if (template !== draft.template || (draft.source === 'generated' && draft.photos.some((photo) => photo.url.includes('/demo/generic/')))) {
+      const migrated = {
+        ...draft,
+        template,
+        photos: draft.source === 'generated' && draft.photos.some((photo) => photo.url.includes('/demo/generic/')) ? createIndustryPhotos(draft.category, draft.offerings) : draft.photos,
+      }
       saveDraft(migrated)
       return migrated
     }

@@ -9,49 +9,44 @@ describe('renderSite', () => {
     expect(html).toContain('<!doctype html>')
     expect(html).toContain('<script type="application/ld+json">')
     expect(html).toContain(draft.name)
-    expect(html).toContain('品牌影像')
+    expect(html).toContain(draft.tagline)
     expect(html).not.toContain('拿鐵與咖啡豆')
   })
 
   it('escapes user-controlled HTML', () => {
-    const draft = { ...createDemoBusiness(), name: '<img src=x onerror=alert(1)>' }
+    const draft = {
+      ...createDemoBusiness(),
+      name: '<img src=x onerror=alert(1)>',
+    }
     const html = renderSite(draft)
     expect(html).not.toContain('<img src=x onerror=alert(1)>')
     expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
   })
 
-  it.each(['editorial', 'vivid', 'calm', 'compact', 'mosaic'] as const)('renders the %s template', (template) => {
+  it.each(['marketing', 'portfolio', 'blog', 'starter'] as const)('renders the official %s template', (template) => {
     const html = renderSite({ ...createDemoBusiness(), template })
-    expect(html).toContain('--accent:')
     expect(html).toContain('Powered by lihi.io')
-    expect(html).toContain('class="industry-art"')
-    expect(html).toContain('class="hero-index"')
+    expect(html).toContain(`class="official official-${template}"`)
     expect(html).toContain(`data-layout="${template}"`)
   })
 
   it('uses different content structures instead of only changing photos or colors', () => {
     const draft = createDemoBusiness()
-    const editorial = renderSite({ ...draft, template: 'editorial' })
-    const vivid = renderSite({ ...draft, template: 'vivid' })
-    const compact = renderSite({ ...draft, template: 'compact' })
-    const mosaic = renderSite({ ...draft, template: 'mosaic' })
+    const marketing = renderSite({ ...draft, template: 'marketing' })
+    const portfolio = renderSite({ ...draft, template: 'portfolio' })
+    const blog = renderSite({ ...draft, template: 'blog' })
+    const starter = renderSite({ ...draft, template: 'starter' })
 
-    expect(editorial.indexOf('id="about"')).toBeLessThan(editorial.indexOf('id="gallery"'))
-    expect(vivid.indexOf('id="services"')).toBeLessThan(vivid.indexOf('id="about"'))
-    expect(compact.indexOf('id="contact"')).toBeLessThan(compact.indexOf('id="services"'))
-    expect(mosaic.indexOf('id="gallery"')).toBeLessThan(mosaic.indexOf('id="services"'))
+    expect(marketing.indexOf('id="services"')).toBeLessThan(marketing.indexOf('id="about"'))
+    expect(portfolio.indexOf('id="work"')).toBeLessThan(portfolio.indexOf('id="about"'))
+    expect(blog.indexOf('id="stories"')).toBeLessThan(blog.indexOf('id="about"'))
+    expect(starter.indexOf('id="services"')).toBeLessThan(starter.indexOf('id="about"'))
   })
 
-  it('adds an industry-specific marker from the business category', () => {
-    const html = renderSite(createDemoBusiness())
-    expect(html).toContain('data-industry="cafe"')
-    expect(html).toContain('COFFEE &amp; DESSERT')
-  })
-
-  it.each(['editorial', 'vivid', 'calm', 'compact', 'mosaic'] as const)('caps the %s template title at the approved size', (template) => {
+  it.each(['marketing', 'portfolio', 'blog', 'starter'] as const)('caps the %s template title at the approved size', (template) => {
     const html = renderSite({ ...createDemoBusiness(), template })
-    expect(html).toContain('font-size:clamp(40px,4.4vw,48px)')
-    expect(html).toContain('<h1>日光散步珈琲</h1>')
+    expect(html).toContain('font-size:clamp(40px,4.2vw,48px)')
+    expect(html).toContain(`>${createDemoBusiness().tagline}</h1>`)
   })
 
   it('does not expose image attribution or internal image labels', () => {
@@ -86,5 +81,4 @@ describe('renderSite', () => {
     expect(html).toContain('src="data:image/jpeg;base64,YWJjMTIz"')
     expect(html).not.toContain('data:text/html')
   })
-
 })

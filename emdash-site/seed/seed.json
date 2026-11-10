@@ -18,7 +18,12 @@
       "urlPattern": "/s/{slug}",
       "supports": ["drafts", "revisions", "preview"],
       "fields": [
-        { "slug": "name", "label": "品牌／店家名稱", "type": "string", "required": true },
+        {
+          "slug": "name",
+          "label": "品牌／店家名稱",
+          "type": "string",
+          "required": true
+        },
         {
           "slug": "template",
           "label": "版型",
@@ -26,8 +31,79 @@
           "required": true,
           "options": ["editorial", "vivid", "calm", "compact", "mosaic"]
         },
-        { "slug": "html", "label": "網站 HTML", "type": "text", "required": true },
-        { "slug": "expires_at", "label": "預覽到期時間", "type": "datetime", "required": true }
+        {
+          "slug": "template_key",
+          "label": "EmDash 官方版型",
+          "type": "select",
+          "required": true,
+          "options": ["marketing", "portfolio", "blog", "starter"]
+        },
+        {
+          "slug": "html",
+          "label": "系統預覽快取",
+          "type": "text",
+          "required": true
+        },
+        {
+          "slug": "category",
+          "label": "產業類型",
+          "type": "string",
+          "required": true
+        },
+        {
+          "slug": "tagline",
+          "label": "主標題",
+          "type": "string",
+          "required": true
+        },
+        {
+          "slug": "description",
+          "label": "品牌介紹",
+          "type": "text",
+          "required": true
+        },
+        { "slug": "address", "label": "地址", "type": "string" },
+        { "slug": "phone", "label": "電話", "type": "string" },
+        {
+          "slug": "google_maps_url",
+          "label": "Google 地圖連結",
+          "type": "url"
+        },
+        { "slug": "line_url", "label": "LINE 連結", "type": "url" },
+        { "slug": "instagram_url", "label": "Instagram 連結", "type": "url" },
+        { "slug": "video_url", "label": "影片連結", "type": "url" },
+        {
+          "slug": "offering_1",
+          "label": "主要服務 1",
+          "type": "string",
+          "required": true
+        },
+        { "slug": "service_1", "label": "服務說明 1", "type": "text" },
+        { "slug": "offering_2", "label": "主要服務 2", "type": "string" },
+        { "slug": "service_2", "label": "服務說明 2", "type": "text" },
+        { "slug": "offering_3", "label": "主要服務 3", "type": "string" },
+        { "slug": "service_3", "label": "服務說明 3", "type": "text" },
+        {
+          "slug": "hours",
+          "label": "營業時間（每行：日期｜時間）",
+          "type": "text"
+        },
+        { "slug": "photo_1_url", "label": "圖片 1 網址", "type": "text" },
+        { "slug": "photo_1_alt", "label": "圖片 1 說明", "type": "string" },
+        { "slug": "photo_2_url", "label": "圖片 2 網址", "type": "text" },
+        { "slug": "photo_2_alt", "label": "圖片 2 說明", "type": "string" },
+        { "slug": "photo_3_url", "label": "圖片 3 網址", "type": "text" },
+        { "slug": "photo_3_alt", "label": "圖片 3 說明", "type": "string" },
+        { "slug": "photo_4_url", "label": "圖片 4 網址", "type": "text" },
+        { "slug": "photo_4_alt", "label": "圖片 4 說明", "type": "string" },
+        { "slug": "photo_5_url", "label": "圖片 5 網址", "type": "text" },
+        { "slug": "photo_5_alt", "label": "圖片 5 說明", "type": "string" },
+        {
+          "slug": "expires_at",
+          "label": "預覽到期時間",
+          "type": "datetime",
+          "required": true
+        }
       ]
     }
   ]
