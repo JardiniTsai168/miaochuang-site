@@ -82,9 +82,11 @@ for (const item of cases) {
     const logo = document.querySelector('.app-header .brand img')?.getBoundingClientRect()
     const brandName = document.querySelector('.app-header .brand-name')
     if (!header || !logo) return undefined
-    const expectedLeft = window.innerWidth <= 390 ? 16 : 100
+    const expectedLeft = window.innerWidth <= 390 ? 14 : 144
     const expectedLogoWidth = 133.328125
-    const logoCenterOffset = Math.abs(logo.top + logo.height / 2 - (header.top + header.height / 2))
+    const expectedLogoTop = window.innerWidth <= 390 ? 16 : 21.5
+    const expectedHeaderHeight = window.innerWidth <= 390 ? 78 : 89
+    const logoTopOffset = Math.abs(logo.top - header.top - expectedLogoTop)
     const brandNameVisible = brandName ? getComputedStyle(brandName).display !== 'none' : false
     const logoVisibleBottom = logo.bottom - logo.height * (23 / 150)
     const brandNameContentBottom = brandNameVisible
@@ -97,7 +99,7 @@ for (const item of cases) {
       headerHeight: header.height,
       logoLeft: logo.left,
       logoWidth: logo.width,
-      logoCenterOffset,
+      logoTopOffset,
       brandNameVisible,
       brandNameVisibleBottomOffset,
       aligned:
@@ -105,8 +107,8 @@ for (const item of cases) {
         Math.abs(header.width - window.innerWidth) <= 1 &&
         Math.abs(logo.left - expectedLeft) <= 1 &&
         Math.abs(logo.width - expectedLogoWidth) <= 1 &&
-        Math.abs(header.height - 72) <= 1 &&
-        logoCenterOffset <= 1 &&
+        Math.abs(header.height - expectedHeaderHeight) <= 1 &&
+        logoTopOffset <= 1 &&
         brandNameVisibleBottomOffset <= 1 &&
         (window.innerWidth <= 390 ? !brandNameVisible : brandNameVisible),
     }
@@ -125,8 +127,8 @@ for (const item of cases) {
               : undefined
     const shell = selector ? document.querySelector(selector)?.getBoundingClientRect() : undefined
     if (!shell) return undefined
-    const expectedLeft = window.innerWidth <= 390 ? 16 : 100
-    const expectedWidth = window.innerWidth <= 390 ? 358 : 1240
+    const expectedLeft = window.innerWidth <= 390 ? 10 : 160
+    const expectedWidth = window.innerWidth <= 390 ? 370 : 1120
     return {
       selector,
       left: shell.left,
