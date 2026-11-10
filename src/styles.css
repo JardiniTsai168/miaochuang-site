@@ -50,11 +50,10 @@ img { max-width: 100%; }
   border-bottom: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
 }
 .app-header.is-studio { background: var(--surface); }
-.brand { min-width: 0; display: inline-flex; align-items: flex-end; gap: 0; color: var(--navy); text-decoration: none; transform: translateY(-3px); }
+.brand { min-width: 0; display: inline-flex; align-items: center; gap: 0; color: var(--navy); text-decoration: none; transform: translateY(-2.5px); }
 .brand img { width: auto; height: 40px; display: block; }
-.brand-divider { width: 1px; height: 20px; margin: 0 14px 0 4px; align-self: center; background: var(--line); }
-.brand-name { padding-bottom: 8px; white-space: nowrap; font-weight: 900; line-height: 1; letter-spacing: -.02em; }
-.app-header .brand-divider, .app-header .brand-name { display: none; }
+.brand-divider { width: 1px; height: 16px; margin: 0 8px 0 7px; flex: none; background: rgba(26, 26, 94, .18); transform: translateY(6px); }
+.brand-name { display: block; white-space: nowrap; color: var(--navy); font-family: system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; font-size: 16px; font-weight: 700; line-height: 16px; letter-spacing: 1.28px; transform: translateY(6px); }
 .header-note { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: .76rem; font-weight: 600; }
 .header-note span { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 5px #e7f5ef; }
 .text-button, .back-button { min-height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; color: var(--navy); font-size: .82rem; font-weight: 800; }
@@ -407,8 +406,7 @@ img { max-width: 100%; }
 
 @media (min-width: 640px) {
   .app-header { height: 89px; padding-inline: max(24px, calc((100% - var(--nav-shell)) / 2 + 24px)); }
-  .app-header .brand-divider { display: block; }
-  .app-header .brand-name { display: inline; }
+  .brand-divider { margin-right: 11px; margin-left: 10px; }
   .hero-app { padding-top: 52px; }
   .url-control { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 5px; }
   .url-control .primary-button { grid-column: auto; width: auto; margin: 0; border-radius: 10px; }

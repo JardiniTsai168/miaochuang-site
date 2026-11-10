@@ -88,17 +88,25 @@ for (const item of cases) {
     const expectedHeaderHeight = window.innerWidth <= 390 ? 78 : 89
     const logoTopOffset = Math.abs(logo.top - header.top - expectedLogoTop)
     const brandNameVisible = brandName ? getComputedStyle(brandName).display !== 'none' : false
-    const logoVisibleBottom = logo.bottom - logo.height * (23 / 150)
-    const logoVisibleRight = logo.right - logo.width * (36 / 500)
-    const brandNameContentBottom = brandNameVisible
-      ? brandName.getBoundingClientRect().bottom - Number.parseFloat(getComputedStyle(brandName).paddingBottom)
-      : logoVisibleBottom - 2
-    const brandNameOpticalBottomOffset = Math.abs(brandNameContentBottom - (logoVisibleBottom - 2))
     const divider = document.querySelector('.app-header .brand-divider')?.getBoundingClientRect()
     const brandNameRect = brandNameVisible ? brandName.getBoundingClientRect() : undefined
-    const dividerVisualGapOffset = divider && brandNameRect
-      ? Math.abs((divider.left - logoVisibleRight) - (brandNameRect.left - divider.right))
-      : 0
+    const brandStyle = brandName ? getComputedStyle(brandName) : undefined
+    const expectedLogoDividerGap = window.innerWidth <= 390 ? 7 : 10
+    const expectedDividerTextGap = window.innerWidth <= 390 ? 8 : 11
+    const brandLockupAligned = Boolean(
+      divider &&
+      brandNameRect &&
+      brandStyle &&
+      Math.abs(brandNameRect.top - logo.top - 18) <= 1 &&
+      Math.abs(divider.top - brandNameRect.top) <= 1 &&
+      Math.abs(divider.height - 16) <= 1 &&
+      Math.abs(divider.left - logo.right - expectedLogoDividerGap) <= 1 &&
+      Math.abs(brandNameRect.left - divider.right - expectedDividerTextGap) <= 1 &&
+      Math.abs(Number.parseFloat(brandStyle.fontSize) - 16) <= 1 &&
+      brandStyle.fontWeight === '700' &&
+      Math.abs(Number.parseFloat(brandStyle.lineHeight) - 16) <= 1 &&
+      Math.abs(Number.parseFloat(brandStyle.letterSpacing) - 1.28) <= 0.1
+    )
     return {
       headerLeft: header.left,
       headerWidth: header.width,
@@ -107,8 +115,7 @@ for (const item of cases) {
       logoWidth: logo.width,
       logoTopOffset,
       brandNameVisible,
-      brandNameOpticalBottomOffset,
-      dividerVisualGapOffset,
+      brandLockupAligned,
       aligned:
         Math.abs(header.left) <= 1 &&
         Math.abs(header.width - window.innerWidth) <= 1 &&
@@ -116,9 +123,8 @@ for (const item of cases) {
         Math.abs(logo.width - expectedLogoWidth) <= 1 &&
         Math.abs(header.height - expectedHeaderHeight) <= 1 &&
         logoTopOffset <= 1 &&
-        brandNameOpticalBottomOffset <= 1 &&
-        dividerVisualGapOffset <= 1 &&
-        (window.innerWidth <= 390 ? !brandNameVisible : brandNameVisible),
+        brandNameVisible &&
+        brandLockupAligned,
     }
   })
   const contentShell = await page.evaluate((caseName) => {
