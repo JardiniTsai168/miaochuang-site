@@ -150,6 +150,44 @@ for (const item of cases) {
       aligned: Math.abs(shell.left - expectedLeft) <= 1 && Math.abs(shell.width - expectedWidth) <= 1,
     }
   }, item.name)
+  const importLayout = item.name.startsWith('importing')
+    ? await page.evaluate(() => {
+        const panel = document.querySelector('.import-panel')?.getBoundingClientRect()
+        const intro = document.querySelector('.import-intro')?.getBoundingClientRect()
+        const steps = document.querySelector('.import-panel ol')?.getBoundingClientRect()
+        const header = document.querySelector('.app-header')?.getBoundingClientRect()
+        if (!panel || !intro || !steps || !header) return undefined
+        const desktop = window.innerWidth > 390
+        const centerDelta = Math.abs((intro.top + intro.height / 2) - (steps.top + steps.height / 2))
+        const gap = desktop ? steps.left - intro.right : steps.top - intro.bottom
+        const groupTop = Math.min(intro.top, steps.top)
+        const groupBottom = Math.max(intro.bottom, steps.bottom)
+        const viewportCenterDelta = Math.abs((groupTop + groupBottom) / 2 - (header.bottom + window.innerHeight) / 2)
+        return {
+          introLeft: intro.left,
+          introWidth: intro.width,
+          stepsLeft: steps.left,
+          stepsWidth: steps.width,
+          gap,
+          centerDelta,
+          viewportCenterDelta,
+          aligned: desktop
+            ? Math.abs(intro.left - 260) <= 1 &&
+              Math.abs(intro.width - 480) <= 1 &&
+              Math.abs(steps.left - 820) <= 1 &&
+              Math.abs(steps.width - 360) <= 1 &&
+              Math.abs(gap - 80) <= 1 &&
+              centerDelta <= 1 &&
+              viewportCenterDelta <= 1
+            : Math.abs(intro.left - 10) <= 1 &&
+              Math.abs(intro.width - 370) <= 1 &&
+              Math.abs(steps.left - 10) <= 1 &&
+              Math.abs(steps.width - 370) <= 1 &&
+              Math.abs(gap - 28) <= 1 &&
+              viewportCenterDelta <= 1,
+        }
+      })
+    : undefined
   const pageTitle = await page
     .locator('main h1')
     .first()
@@ -282,6 +320,7 @@ for (const item of cases) {
     brokenImages,
     ...(headerMetrics === undefined ? {} : { headerMetrics }),
     ...(contentShell === undefined ? {} : { contentShell }),
+    ...(importLayout === undefined ? {} : { importLayout }),
     ...(pageTitle === undefined ? {} : { pageTitle }),
     ...(foldContentFits === undefined ? {} : { foldContentFits }),
     ...(launchFoldFits === undefined ? {} : { launchFoldFits }),
@@ -298,4 +337,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.headerMetrics?.aligned === false || result.contentShell?.aligned === false || result.foldContentFits === false || result.launchFoldFits === false || (result.launchMobileDensity && (!result.launchMobileDensity.allOptionCopySingleLine || result.launchMobileDensity.maxBenefitCardHeight > 100)) || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 56 : 72) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain'))))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.headerMetrics?.aligned === false || result.contentShell?.aligned === false || result.importLayout?.aligned === false || result.foldContentFits === false || result.launchFoldFits === false || (result.launchMobileDensity && (!result.launchMobileDensity.allOptionCopySingleLine || result.launchMobileDensity.maxBenefitCardHeight > 100)) || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 56 : 72) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain'))))) process.exitCode = 1
