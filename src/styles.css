@@ -51,7 +51,7 @@ img { max-width: 100%; }
 .brand { min-width: 0; display: inline-flex; align-items: flex-end; gap: 9px; color: var(--navy); text-decoration: none; }
 .brand img { width: auto; height: 40px; display: block; }
 .brand-divider { width: 1px; height: 20px; align-self: center; background: var(--line); }
-.brand-name { white-space: nowrap; font-weight: 900; line-height: 1; letter-spacing: -.02em; }
+.brand-name { padding-bottom: 6px; white-space: nowrap; font-weight: 900; line-height: 1; letter-spacing: -.02em; }
 .app-header .brand-divider, .app-header .brand-name { display: none; }
 .header-note { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: .76rem; font-weight: 600; }
 .header-note span { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 5px #e7f5ef; }
