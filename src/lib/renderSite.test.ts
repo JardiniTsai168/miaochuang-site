@@ -102,4 +102,17 @@ describe('renderSite', () => {
     expect(html).toContain('src="data:image/jpeg;base64,YWJjMTIz"')
     expect(html).not.toContain('data:text/html')
   })
+
+  it('uses an uploaded logo in the shared preview and publish renderer', () => {
+    const html = renderSite({ ...createDemoBusiness(), logoUrl: 'data:image/png;base64,YWJjMTIz' })
+    expect(html).toContain('class="brand-mark has-logo"')
+    expect(html).toContain(`alt="${createDemoBusiness().name} Logo"`)
+  })
+
+  it('keeps short titles on one desktop line while allowing mobile wrapping', () => {
+    const html = renderSite({ ...createDemoBusiness(), template: 'portfolio', tagline: '讓好設計被看見' })
+    expect(html).toContain('<h1 class="title-fit">讓好設計被看見</h1>')
+    expect(html).toContain('.hero h1.title-fit{white-space:nowrap')
+    expect(html).toContain('.hero h1.title-fit{white-space:normal')
+  })
 })

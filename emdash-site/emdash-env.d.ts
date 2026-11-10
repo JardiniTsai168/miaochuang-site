@@ -13,6 +13,7 @@ export interface Site {
   palette_key?: 'hair' | 'beauty' | 'spa' | 'fitness' | 'creative' | 'cleaning' | 'food' | 'service' | 'coral' | 'plum' | 'ochre' | 'midnight'
   html: string
   category: string
+  logo_url?: string
   tagline: string
   description: string
   address?: string

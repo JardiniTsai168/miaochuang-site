@@ -40,6 +40,7 @@ function toDraft(data: Site): BusinessDraft {
   return {
     source: 'merchant',
     name: data.name,
+    logoUrl: data.logo_url || '',
     category: data.category,
     tagline: data.tagline,
     description: data.description,

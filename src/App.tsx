@@ -373,6 +373,16 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
       setError(reason instanceof Error ? reason.message : '圖片處理失敗。')
     }
   }
+
+  async function replaceLogo(file?: File) {
+    if (!file) return
+    setError('')
+    try {
+      update({ logoUrl: await optimizeImage(file) })
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Logo 處理失敗。')
+    }
+  }
   return (
     <div className="editor-section">
       <div className="editor-heading">
@@ -384,6 +394,20 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
       </div>
       <p className="editor-help">系統先用產業共用圖庫完成網站。點任一張圖片即可替換；上傳後會自動最佳化。</p>
       {error && <p className="field-error">{error}</p>}
+      <article className="logo-uploader">
+        <div className="logo-preview">
+          {draft.logoUrl ? <img src={draft.logoUrl} alt={`${draft.name} Logo`} /> : <strong>{draft.name.slice(0, 2)}</strong>}
+        </div>
+        <div>
+          <strong>品牌 Logo</strong>
+          <span>建議使用透明背景 PNG；會出現在導覽列與頁尾。</span>
+        </div>
+        <label className="logo-upload-button">
+          <Upload size={14} /> {draft.logoUrl ? '更換 Logo' : '上傳 Logo'}
+          <input type="file" accept="image/*" onChange={(event) => replaceLogo(event.target.files?.[0])} />
+        </label>
+        {draft.logoUrl && <button className="logo-remove-button" type="button" onClick={() => update({ logoUrl: undefined })}>改用文字</button>}
+      </article>
       <div className="photo-picker">
         {draft.photos.map((photo) => (
           <article key={photo.id}>

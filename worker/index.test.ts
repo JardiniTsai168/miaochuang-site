@@ -26,6 +26,7 @@ const content = {
 }
 const site = {
   category: brief.industry,
+  logoUrl: 'data:image/png;base64,YWJjMTIz',
   paletteKey: 'coral' as const,
   tagline: content.tagline,
   description: content.description,
@@ -225,6 +226,7 @@ describe('OpenRouter generation Worker', () => {
         template: 'editorial',
         template_key: 'marketing',
         palette_key: 'coral',
+        logo_url: site.logoUrl,
         tagline: site.tagline,
         photo_1_url: site.photos[0].url,
       },

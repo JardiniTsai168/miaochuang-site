@@ -35,6 +35,7 @@ type GeneratedContent = {
 
 type SiteContent = {
   category: string
+  logoUrl?: string
   paletteKey?: PaletteId
   tagline: string
   description: string
@@ -224,6 +225,7 @@ function parseBrandCheckoutInput(value: unknown): BrandCheckoutInput {
     expiresAt: typeof body.expiresAt === 'number' ? body.expiresAt : 0,
     site: {
       category: clean(rawSite.category, 120),
+      logoUrl: typeof rawSite.logoUrl === 'string' ? rawSite.logoUrl.trim().slice(0, 1_500_000) : '',
       paletteKey: paletteIds.includes(clean(rawSite.paletteKey, 40) as PaletteId) ? clean(rawSite.paletteKey, 40) as PaletteId : undefined,
       tagline: clean(rawSite.tagline, 160),
       description: clean(rawSite.description, 1200),
@@ -348,6 +350,7 @@ export async function prepareBrandCheckout(
     template_key: input.template,
     html: input.html,
     category: input.site.category,
+    logo_url: input.site.logoUrl || '',
     palette_key: input.site.paletteKey || '',
     tagline: input.site.tagline,
     description: input.site.description,

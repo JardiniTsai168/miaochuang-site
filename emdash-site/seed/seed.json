@@ -56,6 +56,11 @@
           "required": true
         },
         {
+          "slug": "logo_url",
+          "label": "品牌 Logo",
+          "type": "text"
+        },
+        {
           "slug": "tagline",
           "label": "主標題",
           "type": "string",

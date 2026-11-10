@@ -39,6 +39,7 @@ export type BusinessDraft = {
   sourceUrl?: string
   source?: 'generated' | 'merchant' | 'demo'
   name: string
+  logoUrl?: string
   category: string
   tagline: string
   description: string
