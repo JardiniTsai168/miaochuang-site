@@ -23,7 +23,7 @@ describe('renderSite', () => {
   it.each(['editorial', 'vivid', 'calm', 'compact', 'mosaic'] as const)('renders the %s template', (template) => {
     const html = renderSite({ ...createDemoBusiness(), template })
     expect(html).toContain('--accent:')
-    expect(html).toContain('Powered by lihiDomain')
+    expect(html).toContain('Powered by lihi.io')
     expect(html).toContain('class="industry-art"')
     expect(html).toContain('class="hero-index"')
     expect(html).toContain(`data-layout="${template}"`)
@@ -36,23 +36,32 @@ describe('renderSite', () => {
     const compact = renderSite({ ...draft, template: 'compact' })
     const mosaic = renderSite({ ...draft, template: 'mosaic' })
 
-    expect(editorial.indexOf('id="gallery"')).toBeLessThan(editorial.indexOf('id="about"'))
+    expect(editorial.indexOf('id="about"')).toBeLessThan(editorial.indexOf('id="gallery"'))
     expect(vivid.indexOf('id="services"')).toBeLessThan(vivid.indexOf('id="about"'))
     expect(compact.indexOf('id="contact"')).toBeLessThan(compact.indexOf('id="services"'))
     expect(mosaic.indexOf('id="gallery"')).toBeLessThan(mosaic.indexOf('id="services"'))
   })
 
-  it('adds an industry-specific illustration from the business category', () => {
+  it('adds an industry-specific marker from the business category', () => {
     const html = renderSite(createDemoBusiness())
     expect(html).toContain('data-industry="cafe"')
-    expect(html).toContain('COFFEE CULTURE')
-    expect(html).toContain('咖啡杯插圖')
+    expect(html).toContain('COFFEE &amp; DESSERT')
   })
 
-  it.each(['editorial', 'vivid', 'calm', 'compact', 'mosaic'] as const)('keeps the %s template title on one line', (template) => {
+  it.each(['editorial', 'vivid', 'calm', 'compact', 'mosaic'] as const)('caps the %s template title at the approved size', (template) => {
     const html = renderSite({ ...createDemoBusiness(), template })
-    expect(html).toContain('white-space:nowrap')
-    expect(html).toMatch(/<h1 style="--title-size:\d+px">日光散步珈琲<\/h1>/)
+    expect(html).toContain('font-size:clamp(40px,4.4vw,48px)')
+    expect(html).toContain('<h1>日光散步珈琲</h1>')
+  })
+
+  it('does not expose image attribution or internal image labels', () => {
+    const draft = createDemoBusiness()
+    draft.photos[0].sourceUrl = 'https://example.com/photo'
+    const html = renderSite(draft)
+    expect(html).not.toContain('查看來源')
+    expect(html).not.toContain('主視覺來源')
+    expect(html).not.toContain('<figcaption>')
+    expect(html).not.toContain('example.com/photo')
   })
 
   it('opens external preview links outside the iframe without breaking internal anchors', () => {

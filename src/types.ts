@@ -78,5 +78,5 @@ export type BrandBrief = {
   hours?: string
 }
 
-export type AppStage = 'landing' | 'importing' | 'studio' | 'launch'
+export type AppStage = 'landing' | 'importing' | 'studio' | 'launch' | 'domain'
 export type PreviewViewport = 'desktop' | 'mobile'

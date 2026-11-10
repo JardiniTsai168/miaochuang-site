@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { generateContent, handleRequest, prepareBrandCheckout, type Env } from './index'
+import { generateContent, handleRequest, prepareBrandCheckout, suggestDomains, SuggestionLimiter, type Env } from './index'
 
 const env: Env = {
   OPENROUTER_API_KEY: 'test-key',
@@ -54,6 +54,21 @@ describe('OpenRouter generation Worker', () => {
     }, fetcher as typeof fetch)).resolves.toEqual(content)
   })
 
+  it('returns exactly three safe domain suggestions', async () => {
+    const fetcher = vi.fn(async () => Response.json({ choices: [{ message: { content: JSON.stringify({ domains: ['sunnyhair.com', 'sunnyhair.tw', 'sunnyhairstudio.com'] }) } }] }))
+    await expect(suggestDomains({ brandName: '日光髮所' }, env, fetcher as typeof fetch)).resolves.toEqual(['sunnyhair.com', 'sunnyhair.tw', 'sunnyhairstudio.com'])
+  })
+
+  it('limits each durable IP bucket to five recommendations', async () => {
+    const values = new Map<string, unknown>()
+    const state = { storage: { get: async (key: string) => values.get(key), put: async (key: string, value: unknown) => { values.set(key, value) } } } as unknown as DurableObjectState
+    const limiter = new SuggestionLimiter(state)
+    for (let index = 0; index < 5; index += 1) {
+      await expect(limiter.fetch().then((response) => response.json())).resolves.toMatchObject({ allowed: true, remaining: 4 - index })
+    }
+    await expect(limiter.fetch().then((response) => response.json())).resolves.toEqual({ allowed: false, remaining: 0 })
+  })
+
   it('requires at least one offering in addition to three advantages', async () => {
     const response = await handleRequest(new Request('https://api.example.com/api/generate-content', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...brief, offerings: ['', '', ''] }),
@@ -99,6 +114,12 @@ describe('OpenRouter generation Worker', () => {
     expect(calls[0].body).toMatchObject({ status: 'draft', data: { name: '日光髮所' } })
   })
 
+  it('forwards the selected suggestion to lihi domain search', async () => {
+    const fetcher = vi.fn(async () => Response.json({ success: true, data: { item: { id: 'entry-domain', slug: 'brand-domain' } } }))
+    const result = await prepareBrandCheckout({ name: '日光髮所', domainQuery: 'sunnyhair.com', template: 'editorial', expiresAt: Date.now() + 1000, html: '<!doctype html>', launchMode: 'brand' }, env, fetcher as typeof fetch)
+    expect(new URL(result.checkoutUrl).searchParams.get('s')).toBe('sunnyhair.com')
+  })
+
   it('updates the same unpublished handoff when brand checkout is retried', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => Response.json({ success: true, data: { item: { id: 'entry-7', slug: 'site-existing' } } }))
     const result = await prepareBrandCheckout({
@@ -110,14 +131,14 @@ describe('OpenRouter generation Worker', () => {
     expect(fetcher).toHaveBeenNthCalledWith(1, 'https://cms.example.com/_emdash/api/content/sites/entry-7', expect.objectContaining({ method: 'PUT' }))
   })
 
-  it('publishes a noindex public preview with a seven-day expiry', async () => {
+  it('publishes a noindex public preview with a thirty-day expiry', async () => {
     const calls: Array<{ url: string; body: unknown }> = []
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       calls.push({ url: String(input), body: JSON.parse(String(init?.body)) })
       return Response.json({ success: true, data: { item: { id: 'entry-public', slug: 'brand-public' } } }, { status: 201 })
     })
     const result = await prepareBrandCheckout({
-      name: '日光髮所', template: 'editorial', expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      name: '日光髮所', template: 'editorial', expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
       html: '<!doctype html><meta name="robots" content="noindex,nofollow"><title>日光髮所</title>', launchMode: 'public',
     }, env, fetcher as typeof fetch)
     expect(result.previewUrl).toMatch(/\/s\/brand-/u)

@@ -22,7 +22,7 @@ describe('App', () => {
   it('shows the core promise and pricing disclosure', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: /說出品牌的優勢/ })).toBeInTheDocument()
-    expect(screen.getByText('生成與 7 天預覽免費')).toBeInTheDocument()
+    expect(screen.getByText('生成與 30 天預覽免費')).toBeInTheDocument()
     expect(screen.getByText(/正式收費與網域流程將由 lihi 訂閱機制處理/)).toBeInTheDocument()
   })
 
@@ -36,9 +36,22 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /網站上線/ }))
     expect(screen.getByRole('heading', { name: /選擇網站上線方式/ })).toBeInTheDocument()
+    expect(screen.queryByText('先用公共網址快速分享，或直接建立屬於自己的品牌網域。')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /部署到公共網域/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /部署到屬於自己的品牌網域/ })).toBeInTheDocument()
-    expect(screen.getByText('一個網域，不只是一個網址。')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '重新開始' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '回到網站設計' })).toBeInTheDocument()
+    expect(screen.queryByText('by lihiDomain')).not.toBeInTheDocument()
+    expect(screen.getByText('網站發布後無法再次編輯')).toBeInTheDocument()
+    expect(screen.getByText('網站自發布日起保留 30 天')).toBeInTheDocument()
+    expect(screen.queryByText('使用專屬網域，讓品牌更容易被記住')).not.toBeInTheDocument()
+    expect(screen.getByText('專屬後台，隨時更新網站內容')).toBeInTheDocument()
+    expect(screen.getByText('Cloudflare 全球安全網路防護')).toBeInTheDocument()
+    expect(screen.getByText('申請網域，第一年網站服務免費')).toBeInTheDocument()
+    expect(screen.getByText('使用專屬網域，減少詐騙，讓品牌更容易被記住。')).toBeInTheDocument()
+    expect(screen.getByText('網域，是品牌的起點。')).toBeInTheDocument()
+    expect(screen.queryByText(/它是品牌被記住的名字/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/功能內容參考 lihiDomain/)).not.toBeInTheDocument()
   })
 
   it('exposes deterministic review links for each flow step', () => {
@@ -58,11 +71,21 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /選擇網站上線方式/ })).toBeInTheDocument()
   })
 
+  it('shows brand-name suggestions before lihi domain search', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ suggestions: ['sunnywalk.com', 'sunnywalk.tw', 'sunnywalkcafe.com'], remaining: 4 })))
+    window.history.replaceState({}, '', '/?demo=domain')
+    render(<App />)
+    expect(screen.getByRole('heading', { name: /找到讓人記得住的品牌網域/ })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /sunnywalk.com/ })).toBeInTheDocument()
+    expect(screen.getByText(/剩餘 4 次/)).toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
   it('opens a requested template directly for review', () => {
     window.history.replaceState({}, '', '/?demo=studio&template=mosaic')
     render(<App />)
-    expect(screen.getByRole('button', { name: /影像拼貼/ })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('影像拼貼', { selector: '.template-detail strong' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /作品集/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('作品集', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
   it('makes all five website templates visible and selectable', async () => {
@@ -70,12 +93,12 @@ describe('App', () => {
     saveDraft(createDemoBusiness())
     render(<App />)
     expect(screen.getByRole('heading', { name: /先挑一個最像你店裡的版型/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /手作菜單/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /影像拼貼/ })).toBeInTheDocument()
-    const vivid = screen.getByRole('button', { name: /醒目海報/ })
+    expect(screen.getByRole('button', { name: /在地店舖/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /作品集/ })).toBeInTheDocument()
+    const vivid = screen.getByRole('button', { name: /醒目企劃/ })
     await user.click(vivid)
     expect(vivid).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('醒目海報', { selector: '.template-detail strong' })).toBeInTheDocument()
+    expect(screen.getByText('醒目企劃', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
   it('offers five replaceable website image slots', async () => {
@@ -86,7 +109,7 @@ describe('App', () => {
 
     expect(screen.getByText('5 個版位')).toBeInTheDocument()
     expect(screen.getAllByText('替換圖片')).toHaveLength(5)
-    expect(screen.getByText('網站主視覺')).toBeInTheDocument()
-    expect(screen.getByText('細節特寫')).toBeInTheDocument()
+    expect(screen.queryByText('網站主視覺')).not.toBeInTheDocument()
+    expect(screen.queryByText('細節特寫')).not.toBeInTheDocument()
   })
 })

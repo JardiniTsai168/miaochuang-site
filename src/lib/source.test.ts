@@ -27,7 +27,7 @@ describe('brand brief generation', () => {
     expect(result.draft).toMatchObject({ source: 'generated', name: '日光髮所', category: '美髮', offerings: brief.offerings, reviews: [] })
     expect(result.draft.photos).toHaveLength(5)
     expect(result.draft.photos.filter((photo) => photo.selected)).toHaveLength(5)
-    expect(result.draft.expiresAt - result.draft.createdAt).toBe(7 * 24 * 60 * 60 * 1000)
+    expect(result.draft.expiresAt - result.draft.createdAt).toBe(30 * 24 * 60 * 60 * 1000)
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
 

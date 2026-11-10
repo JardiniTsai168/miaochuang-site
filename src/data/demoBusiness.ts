@@ -1,7 +1,10 @@
 import type { BusinessDraft, BusinessPhoto } from '../types'
 
 const DAY = 24 * 60 * 60 * 1000
-const demoAsset = (filename: string) => `${import.meta.env.BASE_URL}demo/${filename}`
+const demoAsset = (filename: string) => new URL(
+  `${import.meta.env.BASE_URL}demo/${filename}`,
+  globalThis.location?.href || 'http://localhost/',
+).toString()
 
 const genericCampaignPhotos = [
   ['generic/owner-welcome.jpg', '店主在明亮門面迎接來訪顧客'],
@@ -63,6 +66,6 @@ export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): B
     accent: '#B85D3F',
     regenerationCount: 0,
     createdAt: now,
-    expiresAt: now + 7 * DAY,
+    expiresAt: now + 30 * DAY,
   }
 }

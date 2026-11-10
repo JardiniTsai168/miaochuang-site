@@ -15,18 +15,20 @@ const cases = [
   { name: 'importing-desktop', path: '/?demo=importing', width: 1440, height: 1000 },
   { name: 'importing-mobile', path: '/?demo=importing', width: 390, height: 844 },
   { name: 'studio-desktop', path: '/?demo=studio', width: 1440, height: 1000 },
-  { name: 'studio-vivid-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '醒目海報' },
-  { name: 'studio-calm-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '靜謐藝廊' },
-  { name: 'studio-compact-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '手作菜單' },
-  { name: 'studio-mosaic-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '影像拼貼' },
+  { name: 'studio-vivid-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '醒目企劃' },
+  { name: 'studio-calm-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '質感空間' },
+  { name: 'studio-compact-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '在地店舖' },
+  { name: 'studio-mosaic-desktop', path: '/?demo=studio', width: 1440, height: 1000, click: '作品集' },
   { name: 'studio-mobile', path: '/?demo=studio', width: 390, height: 844 },
   { name: 'studio-preview-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['查看網站', '手機版預覽'] },
-  { name: 'studio-vivid-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['醒目海報', '查看網站', '手機版預覽'] },
-  { name: 'studio-calm-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['靜謐藝廊', '查看網站', '手機版預覽'] },
-  { name: 'studio-compact-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['手作菜單', '查看網站', '手機版預覽'] },
-  { name: 'studio-mosaic-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['影像拼貼', '查看網站', '手機版預覽'] },
-  { name: 'launch-desktop', path: '/?demo=launch', width: 1440, height: 1000 },
+  { name: 'studio-vivid-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['醒目企劃', '查看網站', '手機版預覽'] },
+  { name: 'studio-calm-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['質感空間', '查看網站', '手機版預覽'] },
+  { name: 'studio-compact-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['在地店舖', '查看網站', '手機版預覽'] },
+  { name: 'studio-mosaic-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['作品集', '查看網站', '手機版預覽'] },
+  { name: 'launch-desktop', path: '/?demo=launch', width: 1440, height: 900 },
   { name: 'launch-mobile', path: '/?demo=launch', width: 390, height: 844 },
+  { name: 'domain-desktop', path: '/?demo=domain', width: 1440, height: 900 },
+  { name: 'domain-mobile', path: '/?demo=domain', width: 390, height: 844 },
 ]
 
 const results = []
@@ -60,7 +62,7 @@ for (const item of cases) {
     previewLinkSafe = Boolean(popup) && page.url().includes('demo=studio')
     await popup?.close()
 
-    const lastTemplate = page.getByRole('button', { name: /影像拼貼/ })
+    const lastTemplate = page.getByRole('button', { name: /作品集/ })
     const beforeScroll = await lastTemplate.boundingBox()
     await page.mouse.move(200, 600)
     await page.mouse.wheel(0, 900)
@@ -98,6 +100,25 @@ for (const item of cases) {
         const overlapArea = title && note ? Math.max(0, Math.min(title.right, note.right) - Math.max(title.left, note.left)) * Math.max(0, Math.min(title.bottom, note.bottom) - Math.max(title.top, note.top)) : 0
         const noteWindowOverlap = note && previewWindow ? Math.max(0, Math.min(note.right, previewWindow.right) - Math.max(note.left, previewWindow.left)) * Math.max(0, Math.min(note.bottom, previewWindow.bottom) - Math.max(note.top, previewWindow.top)) : 0
         return Boolean(form && preview && form.bottom <= window.innerHeight && preview.bottom <= window.innerHeight && Math.abs(form.bottom - preview.bottom) <= 4 && titleLines === 1 && overlapArea === 0 && noteWindowOverlap === 0)
+      })
+    : undefined
+  const launchFoldFits = item.name === 'launch-desktop'
+    ? await page.evaluate(() => {
+        const domainValue = document.querySelector('.domain-value')?.getBoundingClientRect()
+        const reset = [...document.querySelectorAll('button')].find((button) => button.textContent?.includes('重新開始'))?.getBoundingClientRect()
+        const back = [...document.querySelectorAll('button')].find((button) => button.textContent?.includes('回到網站設計'))?.getBoundingClientRect()
+        return Boolean(domainValue && reset && back && domainValue.bottom <= window.innerHeight && back.left < reset.left)
+      })
+    : undefined
+  const launchMobileDensity = item.name === 'launch-mobile'
+    ? await page.evaluate(() => {
+        const copyLines = [...document.querySelectorAll('.launch-option-copy li')].map((item) => {
+          const rect = item.getBoundingClientRect()
+          const lineHeight = Number.parseFloat(getComputedStyle(item).lineHeight)
+          return Math.round(rect.height / lineHeight)
+        })
+        const cards = [...document.querySelectorAll('.domain-benefits article')].map((card) => card.getBoundingClientRect().height)
+        return { allOptionCopySingleLine: copyLines.every((lines) => lines === 1), maxBenefitCardHeight: Math.max(0, ...cards) }
       })
     : undefined
   for (const frame of page.frames()) {
@@ -154,9 +175,7 @@ for (const item of cases) {
         return [Number.parseFloat(style.paddingTop), Number.parseFloat(style.paddingBottom)]
       }))
       const layout = document.body.dataset.layout
-      const protectedImageFits = ['calm', 'compact'].includes(layout || '')
-        ? [...document.querySelectorAll('.hero-media img')].map((image) => getComputedStyle(image).objectFit)
-        : []
+      const protectedImageFits = []
       const media = document.querySelector('.hero-media')?.getBoundingClientRect()
       const overlay = document.querySelector('.industry-art')?.getBoundingClientRect()
       const mediaOverlayArea = media && overlay && ['calm', 'compact'].includes(layout || '')
@@ -173,6 +192,8 @@ for (const item of cases) {
     brokenImages,
     ...(pageTitle === undefined ? {} : { pageTitle }),
     ...(foldContentFits === undefined ? {} : { foldContentFits }),
+    ...(launchFoldFits === undefined ? {} : { launchFoldFits }),
+    ...(launchMobileDensity === undefined ? {} : { launchMobileDensity }),
     ...(heroTitle === undefined ? {} : { heroTitle }),
     ...(heroDecorOverlap === undefined ? {} : { heroDecorOverlap }),
     ...(templateMetrics === undefined ? {} : { templateMetrics }),
@@ -185,4 +206,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.foldContentFits === false || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 40 : 48) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.foldContentFits === false || result.launchFoldFits === false || (result.launchMobileDensity && (!result.launchMobileDensity.allOptionCopySingleLine || result.launchMobileDensity.maxBenefitCardHeight > 100)) || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 40 : 48) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain') || result.templateMetrics.mediaOverlayArea > 0)))) process.exitCode = 1

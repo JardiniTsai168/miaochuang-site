@@ -11,7 +11,7 @@ export class BrandCheckoutError extends Error {
   }
 }
 
-export async function createBrandCheckout(draft: BusinessDraft, launchMode: 'public' | 'brand' = 'brand'): Promise<BrandCheckout> {
+export async function createBrandCheckout(draft: BusinessDraft, launchMode: 'public' | 'brand' = 'brand', domainQuery = ''): Promise<BrandCheckout> {
   const deployableDraft: BusinessDraft = {
     ...draft,
     photos: draft.photos.map((photo) => ({
@@ -28,6 +28,7 @@ export async function createBrandCheckout(draft: BusinessDraft, launchMode: 'pub
       expiresAt: draft.expiresAt,
       html: renderSite(deployableDraft, { noindex: true }),
       launchMode,
+      domainQuery,
       handoff: draft.brandCheckout ? { handoffId: draft.brandCheckout.handoffId, slug: draft.brandCheckout.slug } : undefined,
     }),
   }).catch(() => null)

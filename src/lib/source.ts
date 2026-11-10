@@ -76,7 +76,7 @@ export async function generateBusiness(brief: BrandBrief): Promise<ImportResult>
     accent: '#B85D3F',
     regenerationCount: 0,
     createdAt: now,
-    expiresAt: now + 7 * DAY,
+    expiresAt: now + 30 * DAY,
   }
   return { mode: 'generated', draft }
 }

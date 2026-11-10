@@ -9,6 +9,7 @@ export type Env = {
   EMDASH_COLLECTION?: string
   LIHI_DOMAIN_SEARCH_URL?: string
   EMDASH_SERVICE?: { fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> }
+  SUGGESTION_LIMITER?: DurableObjectNamespace
 }
 
 type Fetcher = typeof fetch
@@ -33,8 +34,11 @@ type BrandCheckoutInput = {
   expiresAt: number
   html: string
   launchMode: 'public' | 'brand'
+  domainQuery?: string
   handoff?: { handoffId: string; slug: string }
 }
+
+type DomainSuggestionInput = { brandName: string }
 
 type EmDashItem = { id: string; slug: string | null }
 
@@ -127,12 +131,31 @@ function parseBrandCheckoutInput(value: unknown): BrandCheckoutInput {
     expiresAt: typeof body.expiresAt === 'number' ? body.expiresAt : 0,
     html: typeof body.html === 'string' ? body.html : '',
     launchMode: body.launchMode === 'public' ? 'public' : 'brand',
+    domainQuery: clean(body.domainQuery, 120),
     ...(handoff?.handoffId && /^[a-z0-9-]+$/iu.test(handoff.slug) ? { handoff } : {}),
   }
   if (!input.name || !input.template || !input.expiresAt || !input.html || input.html.length > 2_000_000) {
     throw new ApiError(400, 'INVALID_BRAND_CHECKOUT', '品牌資料不完整或網站內容超過大小限制。')
   }
   return input
+}
+
+function parseDomainSuggestionInput(value: unknown): DomainSuggestionInput {
+  const body = (value || {}) as Record<string, unknown>
+  const input = { brandName: clean(body.brandName, 80) }
+  if (!input.brandName) throw new ApiError(400, 'INVALID_BRAND_NAME', '請輸入品牌名稱。')
+  return input
+}
+
+async function consumeSuggestionQuota(request: Request, env: Env): Promise<number> {
+  if (!env.SUGGESTION_LIMITER) throw new ApiError(503, 'RATE_LIMIT_NOT_CONFIGURED', '網域推薦服務尚未完成設定。')
+  const ip = request.headers.get('CF-Connecting-IP') || 'local-development'
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`miaochuang-domain:${ip}`))
+  const key = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+  const response = await env.SUGGESTION_LIMITER.get(env.SUGGESTION_LIMITER.idFromName(key)).fetch('https://limiter.internal/consume', { method: 'POST' })
+  const result = await response.json() as { allowed: boolean; remaining: number }
+  if (!result.allowed) throw new ApiError(429, 'SUGGESTION_LIMIT_REACHED', '這個網路已使用 5 次重新推薦，請直接搜尋喜歡的網域名稱。')
+  return result.remaining
 }
 
 function emdashBaseUrl(value: string | undefined, variable: string): string {
@@ -206,7 +229,7 @@ export async function prepareBrandCheckout(input: BrandCheckoutInput, env: Env, 
   }
   const checkoutUrl = new URL(env.LIHI_DOMAIN_SEARCH_URL || 'https://lihi.io/go/search')
   if (checkoutUrl.protocol !== 'https:') throw new ApiError(503, 'CHECKOUT_NOT_CONFIGURED', '網域購買網址設定不正確。')
-  checkoutUrl.searchParams.set('s', input.name)
+  checkoutUrl.searchParams.set('s', input.domainQuery || input.name)
   checkoutUrl.searchParams.set('source', `miaochuang:${item.id}`)
   const previewUrl = `${emdashBaseUrl(env.EMDASH_SITE_URL, 'Site URL')}/s/${encodeURIComponent(slug)}`
   return { handoffId: item.id, slug, checkoutUrl: checkoutUrl.toString(), previewUrl, createdAt: Date.now() }
@@ -284,6 +307,44 @@ export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetc
   return parseGenerated(decoded)
 }
 
+export async function suggestDomains(input: DomainSuggestionInput, env: Env, fetcher: Fetcher): Promise<string[]> {
+  if (!env.OPENROUTER_API_KEY) throw new ApiError(503, 'SERVICE_NOT_CONFIGURED', 'AI 推薦服務尚未完成設定。')
+  const model = env.OPENROUTER_TEXT_MODEL?.trim() || 'openai/gpt-5.6-luna'
+  const response = await fetcher('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': env.PUBLIC_APP_URL || 'https://lihi.io/tools/',
+      'X-OpenRouter-Title': 'Miaochuang Domain Suggestions',
+    },
+    body: JSON.stringify({
+      model,
+      reasoning: { effort: 'none' },
+      max_tokens: 300,
+      messages: [
+        { role: 'system', content: '你是品牌命名與網域顧問。根據品牌名稱提出 3 個簡短、易拼、容易記住的 ASCII 網域名稱。不可宣稱可註冊，避免商標字、連字號與數字。只能輸出 JSON。' },
+        { role: 'user', content: `品牌名稱：${input.brandName}` },
+      ],
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'domain_suggestions', strict: true,
+          schema: { type: 'object', properties: { domains: { type: 'array', items: { type: 'string', pattern: '^[a-z0-9-]+\\.(com|tw|com\\.tw|co)$' }, minItems: 3, maxItems: 3 } }, required: ['domains'], additionalProperties: false },
+        },
+      },
+    }),
+  }).catch(() => null)
+  if (!response?.ok) throw new ApiError(502, 'SUGGESTION_FAILED', '目前無法產生網域建議，請稍後再試。')
+  const payload = await response.json().catch(() => null) as { choices?: Array<{ message?: { content?: string } }> } | null
+  const content = payload?.choices?.[0]?.message?.content
+  if (!content) throw new ApiError(502, 'SUGGESTION_FAILED', '網域推薦沒有回傳結果。')
+  const decoded = JSON.parse(content) as { domains?: unknown[] }
+  const domains = (decoded.domains || []).map((domain) => clean(domain, 120).toLowerCase()).filter((domain) => /^[a-z0-9-]+\.(?:com|tw|com\.tw|co)$/u.test(domain))
+  if (domains.length !== 3 || new Set(domains).size !== 3) throw new ApiError(502, 'SUGGESTION_FAILED', '網域推薦格式不正確，請再試一次。')
+  return domains
+}
+
 export async function handleRequest(request: Request, env: Env, fetcher: Fetcher = fetch): Promise<Response> {
   try {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) })
@@ -294,6 +355,10 @@ export async function handleRequest(request: Request, env: Env, fetcher: Fetcher
     const body = await request.json().catch(() => null)
     if (request.method === 'POST' && url.pathname === '/api/generate-content') {
       return json(request, env, await generateContent(parseBrief(body), env, fetcher))
+    }
+    if (request.method === 'POST' && url.pathname === '/api/domain-suggestions') {
+      const remaining = await consumeSuggestionQuota(request, env)
+      return json(request, env, { suggestions: await suggestDomains(parseDomainSuggestionInput(body), env, fetcher), remaining })
     }
     if (request.method === 'POST' && url.pathname === '/api/brand-checkout') {
       return json(request, env, await prepareBrandCheckout(parseBrandCheckoutInput(body), env, fetcher))
@@ -307,3 +372,15 @@ export async function handleRequest(request: Request, env: Env, fetcher: Fetcher
 }
 
 export default { fetch: (request: Request, env: Env) => handleRequest(request, env) } satisfies ExportedHandler<Env>
+
+export class SuggestionLimiter implements DurableObject {
+  constructor(private readonly state: DurableObjectState) {}
+
+  async fetch(): Promise<Response> {
+    const count = await this.state.storage.get<number>('count') || 0
+    if (count >= 5) return Response.json({ allowed: false, remaining: 0 })
+    const next = count + 1
+    await this.state.storage.put('count', next)
+    return Response.json({ allowed: true, remaining: 5 - next })
+  }
+}

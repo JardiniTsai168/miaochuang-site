@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:lihi-tools": "VITE_BASE_PATH=/tools/MeowSite/ npm run build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

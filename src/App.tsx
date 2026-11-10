@@ -17,7 +17,9 @@ import {
   Palette,
   Pencil,
   QrCode,
+  RefreshCw,
   RotateCcw,
+  Search,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -30,17 +32,18 @@ import { openPreview, renderSite, templateNames } from './lib/renderSite'
 import { generateBusiness, validateBrief } from './lib/source'
 import { optimizeImage } from './lib/image'
 import { createBrandCheckout } from './lib/brandCheckout'
+import { getDomainSuggestions } from './lib/domainSuggestions'
 import type { AppStage, BrandBrief, BusinessDraft, PreviewViewport, TemplateId } from './types'
 
 type EditorTab = 'template' | 'content' | 'photos'
 type StudioView = 'edit' | 'preview'
 
 const templates: Array<{ id: TemplateId; name: string; note: string; accent: string }> = [
-  { id: 'editorial', name: '編輯誌', note: '雜誌封面・影像先行', accent: '#B85D3F' },
-  { id: 'vivid', name: '醒目海報', note: '撞色標語・活動感強', accent: '#E65463' },
-  { id: 'calm', name: '靜謐藝廊', note: '極簡分割・質感留白', accent: '#607A68' },
-  { id: 'compact', name: '手作菜單', note: '資訊格線・服務優先', accent: '#315D68' },
-  { id: 'mosaic', name: '影像拼貼', note: '不對稱相冊・故事感', accent: '#8A4D76' },
+  { id: 'editorial', name: '品牌誌', note: '故事編排・影像先行', accent: '#B85D3F' },
+  { id: 'vivid', name: '醒目企劃', note: '撞色標語・活動感強', accent: '#E65463' },
+  { id: 'calm', name: '質感空間', note: '柔和留白・專業服務', accent: '#607A68' },
+  { id: 'compact', name: '在地店舖', note: '資訊清楚・聯絡優先', accent: '#315D68' },
+  { id: 'mosaic', name: '作品集', note: '不對稱影像・故事感', accent: '#8A4D76' },
 ]
 
 const importSteps = ['整理品牌重點', '撰寫網站文案', '搭配產業圖片', '套用五種版型']
@@ -66,7 +69,7 @@ function Header({ onReset, studio = false }: { onReset?: () => void; studio?: bo
           <RotateCcw size={16} aria-hidden="true" /> 重新開始
         </button>
       ) : (
-        <div className="header-note"><span /> 7 天免費預覽</div>
+        <div className="header-note"><span /> 30 天免費預覽</div>
       )}
     </header>
   )
@@ -141,12 +144,12 @@ function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief
         </section>
 
         <section className="scope-note">
-          <p>生成與 7 天預覽免費</p>
-          <strong>購買網域，第一年網站服務免費</strong>
+          <p>生成與 30 天預覽免費</p>
+          <strong>申請網域，第一年網站服務免費</strong>
           <span>正式收費與網域流程將由 lihi 訂閱機制處理</span>
         </section>
       </main>
-      <footer className="app-footer"><Brand compact /><p>利害短網址有限公司・Powered by lihiDomain</p></footer>
+      <footer className="app-footer"><Brand compact /><p>利害短網址有限公司・Powered by lihi.io</p></footer>
     </div>
   )
 }
@@ -231,7 +234,6 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
     <div className="editor-section">
       <div className="editor-heading"><div><p>網站圖片</p><h2>不喜歡哪張，就換成自己的</h2></div><span className="count-badge">5 個版位</span></div>
       <p className="editor-help">系統先用產業共用圖庫完成網站。點任一張圖片即可替換；上傳後會自動最佳化。</p>
-      <p className="google-source-note">共用圖片只作形象情境，不代表你的真實店面、員工或作品。</p>
       {error && <p className="field-error">{error}</p>}
       <div className="photo-picker">
         {draft.photos.map((photo) => (
@@ -239,10 +241,8 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
             <label className="photo-replace">
               <img src={photo.url} alt={photo.alt} />
               <span><Upload size={14} /> 替換圖片</span>
-              <em>{roleNames[photo.role]}</em>
               <input type="file" accept="image/*" onChange={(event) => replace(photo.id, event.target.files?.[0])} />
             </label>
-            {photo.sourceUrl && <div className="source-links"><a href={photo.sourceUrl} target="_blank" rel="noreferrer">查看圖片來源 ↗</a></div>}
           </article>
         ))}
       </div>
@@ -342,7 +342,7 @@ function Studio({ draft, mode, onChange, onReset, onLaunch }: { draft: BusinessD
           </div>
           <div className={`preview-stage is-${viewport}`}>
             <div className="browser-shell">
-              <div className="browser-bar"><span /><span /><span /><small>7 天預覽・{draft.name}</small></div>
+              <div className="browser-bar"><span /><span /><span /><small>30 天預覽・{draft.name}</small></div>
               <iframe title={`${draft.name}網站預覽`} srcDoc={html} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" />
             </div>
           </div>
@@ -362,22 +362,18 @@ const domainBenefits = [
   { icon: <BarChart3 aria-hidden="true" />, title: '追蹤行銷成效', text: '搭配 lihi 的 A/B 測試與連結追蹤，持續優化轉換。' },
 ]
 
-function Launch({ draft, onChange, onBack, onReset }: { draft: BusinessDraft; onChange: (draft: BusinessDraft) => void; onBack: () => void; onReset: () => void }) {
+function Launch({ draft, onBack, onReset, onDomain }: { draft: BusinessDraft; onBack: () => void; onReset: () => void; onDomain: () => void }) {
   const [choice, setChoice] = useState<LaunchChoice>('brand')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   async function deploy() {
+    if (choice === 'brand') { onDomain(); return }
     setSubmitting(true)
     setError('')
     try {
       const brandCheckout = await createBrandCheckout(draft, choice)
-      if (choice === 'brand') {
-        const nextDraft = { ...draft, brandCheckout }
-        onChange(nextDraft)
-        saveDraft(nextDraft)
-      }
-      window.location.assign(choice === 'brand' ? brandCheckout.checkoutUrl : brandCheckout.previewUrl)
+      window.location.assign(brandCheckout.previewUrl)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '網站上線失敗，請稍後再試。')
       setSubmitting(false)
@@ -386,43 +382,114 @@ function Launch({ draft, onChange, onBack, onReset }: { draft: BusinessDraft; on
 
   return (
     <div className="launch-page">
-      <Header studio onReset={onReset} />
+      <header className="app-header is-studio launch-header">
+        <Brand compact />
+        <div className="launch-header-actions">
+          <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} aria-hidden="true" /> 回到網站設計</button>
+          <button className="text-button" type="button" onClick={onReset}><RotateCcw size={16} aria-hidden="true" /> 重新開始</button>
+        </div>
+      </header>
       <main className="launch-main">
-        <button className="back-button launch-back" type="button" onClick={onBack}><ArrowLeft size={17} /> 回到網站設計</button>
         <header className="launch-heading">
           <p className="eyebrow">步驟 3 / 3・網站上線</p>
           <h1>選擇網站上線方式</h1>
-          <p>先用公共網址快速分享，或直接建立屬於自己的品牌網域。</p>
         </header>
 
         <section className="launch-options" aria-label="網站上線方式">
           <button type="button" className={`launch-option ${choice === 'public' ? 'active' : ''}`} onClick={() => setChoice('public')} aria-pressed={choice === 'public'}>
             <span className="launch-option-icon"><Globe2 aria-hidden="true" /></span>
-            <span className="launch-option-copy"><small>免費・適合先測試</small><strong>部署到公共網域</strong><em>取得可分享的公開網址，保留 7 天並禁止搜尋引擎收錄。</em></span>
+            <span className="launch-option-copy">
+              <small>免費・適合先測試</small>
+              <strong>部署到公共網域</strong>
+              <ul>
+                <li>取得可分享的公開網址</li>
+                <li>網站發布後無法再次編輯</li>
+                <li>網站自發布日起保留 30 天</li>
+              </ul>
+            </span>
             <span className="choice-mark">{choice === 'public' && <Check size={16} />}</span>
           </button>
           <button type="button" className={`launch-option is-recommended ${choice === 'brand' ? 'active' : ''}`} onClick={() => setChoice('brand')} aria-pressed={choice === 'brand'}>
             <span className="recommend-badge">推薦</span>
             <span className="launch-option-icon"><Link2 aria-hidden="true" /></span>
-            <span className="launch-option-copy"><small>品牌長期經營</small><strong>部署到屬於自己的品牌網域</strong><em>前往 lihi 搜尋並購買網域；完成後建立正式網站與管理後台。</em></span>
+            <span className="launch-option-copy">
+              <small>品牌長期經營</small>
+              <strong>部署到屬於自己的品牌網域</strong>
+              <ul>
+                <li>專屬後台，隨時更新網站內容</li>
+                <li>開放搜尋收錄，持續增加曝光</li>
+                <li>Cloudflare 全球安全網路防護</li>
+              </ul>
+            </span>
             <span className="choice-mark">{choice === 'brand' && <Check size={16} />}</span>
           </button>
         </section>
 
         <div className="launch-action">
-          <div><strong>{choice === 'brand' ? '購買網域，第一年網站服務免費' : '7 天公共預覽免費'}</strong><span>{choice === 'brand' ? '下一步會前往 lihiDomain，付款前仍可返回修改。' : '適合先給夥伴或客戶確認，不會被 Google 收錄。'}</span></div>
+          <div><strong>{choice === 'brand' ? '申請網域，第一年網站服務免費' : '30 天公共預覽免費'}</strong><span>{choice === 'brand' ? '使用專屬網域，減少詐騙，讓品牌更容易被記住。' : '適合先給夥伴或客戶確認，不會被 Google 收錄。'}</span></div>
           <button className="primary-button" type="button" disabled={submitting} onClick={deploy}>{submitting ? '正在準備…' : choice === 'brand' ? '前往選擇品牌網域' : '部署公共網址'} <ChevronRight size={18} /></button>
         </div>
         {error && <p className="field-error launch-error" role="alert">{error}</p>}
 
         <section className="domain-value" aria-labelledby="domain-value-title">
-          <div className="domain-value-heading"><p>WHY BRAND DOMAIN</p><h2 id="domain-value-title">一個網域，不只是一個網址。</h2><span>它是品牌被記住的名字，也是網站、信箱、社群與每一次行銷活動的共同入口。</span></div>
+          <div className="domain-value-heading"><p>WHY BRAND DOMAIN</p><h2 id="domain-value-title">網域，是品牌的起點。</h2></div>
           <div className="domain-benefits">{domainBenefits.map((benefit, index) => <article key={benefit.title}><span>0{index + 1}</span>{benefit.icon}<h3>{benefit.title}</h3><p>{benefit.text}</p></article>)}</div>
-          <p className="domain-source">功能內容參考 lihiDomain：網域可自行設定 DNS，並整合短網址、QR Code、A/B 測試與成效追蹤。</p>
         </section>
       </main>
     </div>
   )
+}
+
+function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDraft; onChange: (draft: BusinessDraft) => void; onBack: () => void; onReset: () => void }) {
+  const isDemo = new URLSearchParams(window.location.search).get('demo') === 'domain'
+  const [brandName, setBrandName] = useState(draft.name)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [query, setQuery] = useState('')
+  const [remaining, setRemaining] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  async function recommend() {
+    if (!brandName.trim()) { setError('請先輸入品牌名稱。'); return }
+    setLoading(true); setError('')
+    try {
+      const result = isDemo
+        ? { suggestions: ['sunnywalk.com', 'sunnywalk.tw', 'sunnywalkcafe.com'], remaining: 4 }
+        : await getDomainSuggestions(brandName.trim())
+      setSuggestions(result.suggestions); setQuery(result.suggestions[0]); setRemaining(result.remaining)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : '網域推薦失敗。') }
+    finally { setLoading(false) }
+  }
+
+  useEffect(() => { void recommend() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function continueToLihi(event: React.FormEvent) {
+    event.preventDefault()
+    if (!query.trim()) { setError('請輸入想搜尋的網域名稱。'); return }
+    setSubmitting(true); setError('')
+    try {
+      const brandCheckout = await createBrandCheckout(draft, 'brand', query.trim())
+      const nextDraft = { ...draft, brandCheckout }
+      onChange(nextDraft); saveDraft(nextDraft)
+      window.location.assign(brandCheckout.checkoutUrl)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : '無法前往網域搜尋，請稍後再試。'); setSubmitting(false) }
+  }
+
+  return <div className="domain-search-page">
+    <header className="app-header is-studio launch-header"><Brand compact /><div className="launch-header-actions"><button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> 回到上一步</button><button className="text-button" type="button" onClick={onReset}><RotateCcw size={16} /> 重新開始</button></div></header>
+    <main className="domain-search-main">
+      <header className="domain-search-heading"><p className="eyebrow">品牌網域・名稱建議</p><h1>找到讓人記得住的品牌網域</h1><p>我們先依品牌名稱提供三個方向；選好後會前往 lihi 確認是否可註冊。</p></header>
+      <section className="name-suggestion" aria-labelledby="suggestion-title">
+        <div><p>NAME SUGGESTION</p><h2 id="suggestion-title">你的品牌名稱</h2></div>
+        <div className="suggestion-control"><input aria-label="品牌名稱" value={brandName} onChange={(event) => setBrandName(event.target.value)} maxLength={80} /><button className="secondary-button" type="button" onClick={recommend} disabled={loading || remaining === 0}><RefreshCw size={16} /> {loading ? '推薦中…' : '重新推薦'}</button></div>
+        <p className="suggestion-limit">每個網路最多可推薦 5 次{remaining !== null ? `・剩餘 ${remaining} 次` : ''}</p>
+        <div className="suggestion-list" aria-live="polite">{suggestions.map((domain) => <button type="button" key={domain} className={query === domain ? 'active' : ''} onClick={() => setQuery(domain)}><span>{domain}</span><small>選擇這個名稱</small></button>)}</div>
+      </section>
+      <form className="domain-query" onSubmit={continueToLihi}><label htmlFor="domain-query">搜尋你的品牌網域</label><div><Search aria-hidden="true" /><input id="domain-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="例如 yourbrand.com" autoComplete="off" /><button className="primary-button" disabled={submitting}>{submitting ? '準備中…' : '前往 lihi 查詢'} <ArrowRight size={17} /></button></div><p>實際價格與可註冊狀態，以 lihi 搜尋結果為準。</p></form>
+      {error && <p className="field-error domain-error" role="alert">{error}</p>}
+    </main>
+  </div>
 }
 
 export default function App() {
@@ -433,13 +500,13 @@ export default function App() {
   }, [])
   const existing = useMemo(() => {
     if (demoStage === 'landing' || demoStage === 'importing') return null
-    if (demoStage === 'studio' || demoStage === 'launch') {
+    if (demoStage === 'studio' || demoStage === 'launch' || demoStage === 'domain') {
       const demo = createDemoBusiness()
       return demoTemplate ? { ...demo, template: demoTemplate } : demo
     }
     return loadDraft()
   }, [demoStage, demoTemplate])
-  const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : demoStage === 'launch' ? 'launch' : existing ? 'studio' : 'landing')
+  const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : demoStage === 'launch' ? 'launch' : demoStage === 'domain' ? 'domain' : existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'generated'>('demo')
   const [importStep, setImportStep] = useState(0)
@@ -482,7 +549,8 @@ export default function App() {
   }
 
   if (stage === 'importing') return <Importing activeStep={demoStage === 'importing' ? 2 : importStep} />
-  if (stage === 'launch' && draft) return <Launch draft={draft} onChange={setDraft} onBack={() => setStage('studio')} onReset={reset} />
+  if (stage === 'domain' && draft) return <DomainSearch draft={draft} onChange={setDraft} onBack={() => setStage('launch')} onReset={reset} />
+  if (stage === 'launch' && draft) return <Launch draft={draft} onBack={() => setStage('studio')} onReset={reset} onDomain={() => setStage('domain')} />
   if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReset={reset} onLaunch={() => setStage('launch')} />
   return <Landing onGenerate={startGeneration} onDemo={useDemo} initialError={importError} />
 }

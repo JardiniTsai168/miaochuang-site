@@ -12,10 +12,18 @@
       "service": "miaochuang-emdash-host"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "SUGGESTION_LIMITER", "class_name": "SuggestionLimiter" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["SuggestionLimiter"] }
+  ],
   "vars": {
     "ALLOWED_ORIGINS": "http://localhost:4173,http://127.0.0.1:4173,https://jardinitsai168.github.io,https://miaochuang-v2.monster7405.workers.dev,https://lihidev.com,https://lihi.io",
     "EMDASH_SITE_URL": "https://miaochuang-emdash-host.monster7405.workers.dev",
     "EMDASH_COLLECTION": "sites",
-    "LIHI_DOMAIN_SEARCH_URL": "https://lihi.io/go/search"
+    "LIHI_DOMAIN_SEARCH_URL": "https://app.lihi.io/admin/search"
   }
 }
