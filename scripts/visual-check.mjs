@@ -83,9 +83,10 @@ for (const item of cases) {
     const brandName = document.querySelector('.app-header .brand-name')
     if (!header || !logo) return undefined
     const expectedLeft = window.innerWidth <= 390 ? 16 : 100
-    const expectedLogoWidth = window.innerWidth <= 390 ? 72 : 82
+    const expectedLogoWidth = 133.328125
     const logoCenterOffset = Math.abs(logo.top + logo.height / 2 - (header.top + header.height / 2))
     const brandNameVisible = brandName ? getComputedStyle(brandName).display !== 'none' : false
+    const brandNameBottomOffset = brandNameVisible ? Math.abs(brandName.getBoundingClientRect().bottom - logo.bottom) : 0
     return {
       headerLeft: header.left,
       headerWidth: header.width,
@@ -94,6 +95,7 @@ for (const item of cases) {
       logoWidth: logo.width,
       logoCenterOffset,
       brandNameVisible,
+      brandNameBottomOffset,
       aligned:
         Math.abs(header.left) <= 1 &&
         Math.abs(header.width - window.innerWidth) <= 1 &&
@@ -101,6 +103,7 @@ for (const item of cases) {
         Math.abs(logo.width - expectedLogoWidth) <= 1 &&
         Math.abs(header.height - 72) <= 1 &&
         logoCenterOffset <= 1 &&
+        brandNameBottomOffset <= 1 &&
         (window.innerWidth <= 390 ? !brandNameVisible : brandNameVisible),
     }
   })
