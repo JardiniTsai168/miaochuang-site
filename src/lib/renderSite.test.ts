@@ -53,9 +53,15 @@ describe('renderSite', () => {
     ['咖啡廳・甜點店', 'food', '#8A4932'],
     ['其他服務業', 'service', '#B82F67'],
   ] as const)('applies the %s industry palette', (category, palette, accent) => {
-    const html = renderSite({ ...createDemoBusiness(), category })
+    const html = renderSite({ ...createDemoBusiness(), category, paletteKey: undefined })
     expect(html).toContain(`data-palette="${palette}"`)
     expect(html).toContain(`--industry-accent:${accent}`)
+  })
+
+  it('preserves the user-selected AI palette across template rendering', () => {
+    const html = renderSite({ ...createDemoBusiness(), category: '美髮', paletteKey: 'midnight' })
+    expect(html).toContain('data-palette="midnight"')
+    expect(html).toContain('--industry-accent:#283B6B')
   })
 
   it.each(['marketing', 'portfolio', 'blog', 'starter'] as const)('caps the %s template title at the approved size', (template) => {

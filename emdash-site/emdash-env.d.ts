@@ -10,6 +10,7 @@ export interface Site {
   name: string
   template: 'editorial' | 'vivid' | 'calm' | 'compact' | 'mosaic'
   template_key?: 'marketing' | 'portfolio' | 'blog' | 'starter'
+  palette_key?: 'hair' | 'beauty' | 'spa' | 'fitness' | 'creative' | 'cleaning' | 'food' | 'service' | 'coral' | 'plum' | 'ochre' | 'midnight'
   html: string
   category: string
   tagline: string

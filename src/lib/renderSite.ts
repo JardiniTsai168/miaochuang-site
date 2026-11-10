@@ -106,7 +106,7 @@ const industryCss = `
 
 export function renderSite(draft: BusinessDraft, options: { noindex?: boolean } = { noindex: true }): string {
   const photos = selectedPhotos(draft)
-  const palette = getIndustryPalette(draft.category)
+  const palette = getIndustryPalette(draft.category, draft.paletteKey)
   const title = `${escapeHtml(draft.name)}｜${escapeHtml(draft.category)}`
   const schema = {
     '@context': 'https://schema.org',
@@ -117,7 +117,7 @@ export function renderSite(draft: BusinessDraft, options: { noindex?: boolean } 
     telephone: draft.phone,
     image: photos.map((item) => item.url).filter((url) => /^https?:|^\/(?!\/)/u.test(url)),
   }
-  return `<!doctype html><html lang="zh-Hant" data-layout="${draft.template}" data-palette="${palette.id}"><head><meta charset="utf-8"><base target="_blank"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${title}</title><meta name="description" content="${escapeHtml(draft.description)}">${options.noindex !== false ? '<meta name="robots" content="noindex,nofollow,noarchive">' : ''}<meta property="og:title" content="${title}">${photos[0] && !photos[0].url.startsWith('data:') ? `<meta property="og:image" content="${safeUrl(photos[0].url)}">` : ''}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet"><style>${baseCss}${templateCss[draft.template]}${industryCss}</style><script type="application/ld+json">${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script></head><body style="${industryPaletteStyle(draft.category)}">${renderers[draft.template](draft, photos)}</body></html>`
+  return `<!doctype html><html lang="zh-Hant" data-layout="${draft.template}" data-palette="${palette.id}"><head><meta charset="utf-8"><base target="_blank"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${title}</title><meta name="description" content="${escapeHtml(draft.description)}">${options.noindex !== false ? '<meta name="robots" content="noindex,nofollow,noarchive">' : ''}<meta property="og:title" content="${title}">${photos[0] && !photos[0].url.startsWith('data:') ? `<meta property="og:image" content="${safeUrl(photos[0].url)}">` : ''}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet"><style>${baseCss}${templateCss[draft.template]}${industryCss}</style><script type="application/ld+json">${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script></head><body style="${industryPaletteStyle(draft.category, draft.paletteKey)}">${renderers[draft.template](draft, photos)}</body></html>`
 }
 
 export function openPreview(draft: BusinessDraft): void {

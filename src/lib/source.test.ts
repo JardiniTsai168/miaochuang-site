@@ -20,11 +20,11 @@ describe('brand brief generation', () => {
 
   it('generates copy once and pairs it with five reusable library images', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
-      tagline: '讓每次整理都更像自己', description: '品牌介紹', advantages: brief.advantages,
+      tagline: '讓每次整理都更像自己', description: '品牌介紹', advantages: brief.advantages, paletteKeys: ['hair', 'coral', 'midnight'],
     }))
     const result = await generateBusiness(brief)
     expect(result.mode).toBe('generated')
-    expect(result.draft).toMatchObject({ source: 'generated', name: '日光髮所', category: '美髮', offerings: brief.offerings, reviews: [] })
+    expect(result.draft).toMatchObject({ source: 'generated', name: '日光髮所', category: '美髮', offerings: brief.offerings, reviews: [], paletteKey: 'hair', paletteRecommendations: ['hair', 'coral', 'midnight'] })
     expect(result.draft.photos).toHaveLength(5)
     expect(result.draft.photos.filter((photo) => photo.selected)).toHaveLength(5)
     expect(result.draft.expiresAt - result.draft.createdAt).toBe(30 * 24 * 60 * 60 * 1000)

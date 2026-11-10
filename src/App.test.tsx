@@ -97,11 +97,17 @@ describe('App', () => {
     expect(screen.getByText('Portfolio', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
-  it('shows the automatically selected industry color palette', () => {
+  it('shows three AI color recommendations and lets the user select one', async () => {
+    const user = userEvent.setup()
     window.history.replaceState({}, '', `/?demo=studio&industry=${encodeURIComponent('按摩／SPA')}`)
     render(<App />)
-    expect(screen.getByLabelText('目前產業色系：森林鼠尾草')).toBeInTheDocument()
-    expect(screen.getByText('按摩／SPA色系')).toBeInTheDocument()
+    expect(screen.getByLabelText('AI 推薦色系')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /森林鼠尾草/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /清新湖水綠/ })).toBeInTheDocument()
+    const ochre = screen.getByRole('button', { name: /晨光赭金/ })
+    await user.click(ochre)
+    expect(ochre).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('已套用「晨光赭金」')).toBeInTheDocument()
   })
 
   it('makes all four official EmDash templates visible and selectable', async () => {

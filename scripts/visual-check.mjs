@@ -26,6 +26,7 @@ const cases = [
   { name: 'studio-blog-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['Blog', '查看網站', '手機版預覽'] },
   { name: 'studio-starter-mobile', path: '/?demo=studio', width: 390, height: 844, clicks: ['Starter', '查看網站', '手機版預覽'] },
   { name: 'studio-spa-starter-mobile', path: `/?demo=studio&template=starter&industry=${encodeURIComponent('按摩／SPA')}`, width: 390, height: 844, clicks: ['查看網站', '手機版預覽'] },
+  { name: 'studio-spa-ochre-mobile', path: `/?demo=studio&template=starter&industry=${encodeURIComponent('按摩／SPA')}&palette=ochre`, width: 390, height: 844, clicks: ['查看網站', '手機版預覽'] },
   { name: 'launch-desktop', path: '/?demo=launch', width: 1440, height: 900 },
   { name: 'launch-mobile', path: '/?demo=launch', width: 390, height: 844 },
   { name: 'domain-desktop', path: '/?demo=domain', width: 1440, height: 900 },

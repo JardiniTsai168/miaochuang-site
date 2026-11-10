@@ -22,9 +22,11 @@ const content = {
   tagline: '讓每次整理都更像自己',
   description: '從需求溝通到完成造型，我們專注提供舒服而清楚的服務體驗。',
   advantages: brief.advantages,
+  paletteKeys: ['hair', 'coral', 'midnight'] as const,
 }
 const site = {
   category: brief.industry,
+  paletteKey: 'coral' as const,
   tagline: content.tagline,
   description: content.description,
   address: '台北市中山區',
@@ -58,7 +60,9 @@ describe('OpenRouter generation Worker', () => {
       expect(request.max_tokens).toBe(1_200)
       expect(request).not.toHaveProperty('temperature')
       expect(request.messages[1].content).toContain('剪髮、染髮、頭皮護理')
+      expect(request.messages[1].content).toContain('hair=暖棕沙龍')
       expect(request.messages[0].content).toContain('不得新增價格')
+      expect(request.response_format.json_schema.schema.properties.paletteKeys.items.enum).toContain('midnight')
       return Response.json({
         choices: [{ message: { content: JSON.stringify(content) } }],
       })
@@ -220,6 +224,7 @@ describe('OpenRouter generation Worker', () => {
         name: '日光髮所',
         template: 'editorial',
         template_key: 'marketing',
+        palette_key: 'coral',
         tagline: site.tagline,
         photo_1_url: site.photos[0].url,
       },

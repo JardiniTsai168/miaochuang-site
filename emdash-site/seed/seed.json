@@ -39,6 +39,11 @@
           "options": ["marketing", "portfolio", "blog", "starter"]
         },
         {
+          "slug": "palette_key",
+          "label": "品牌色系",
+          "type": "string"
+        },
+        {
           "slug": "html",
           "label": "系統預覽快取",
           "type": "text",

@@ -1,4 +1,5 @@
 import type { BusinessDraft, BusinessPhoto } from '../types'
+import { getIndustryPalette, getIndustryPaletteOptions } from './industryPalettes'
 
 const DAY = 24 * 60 * 60 * 1000
 const demoAsset = (filename: string) => new URL(`${import.meta.env.BASE_URL}demo/${filename}`, globalThis.location?.href || 'http://localhost/').toString()
@@ -56,11 +57,13 @@ export function createCampaignPhotos(photoPackIndex = Math.floor(Math.random() *
 }
 
 export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): BusinessDraft {
+  const category = '咖啡廳・甜點店'
+  const paletteRecommendations = getIndustryPaletteOptions(category)
   return {
     sourceUrl: 'demo://sunny-walk-cafe',
     source: 'demo',
     name: '日光散步珈琲',
-    category: '咖啡廳・甜點店',
+    category,
     tagline: '把午後留給一杯好咖啡',
     description: '藏在城市轉角的日常咖啡館。選用當季豆款、每日手作甜點，留一個舒服的位置，讓你慢慢喝、好好聊。',
     address: '台北市大安區溫州街 24 號',
@@ -78,7 +81,9 @@ export function createDemoBusiness(now = Date.now(), photoPackIndex?: number): B
     photos: createCampaignPhotos(photoPackIndex),
     reviews: [],
     template: 'marketing',
-    accent: '#171717',
+    paletteKey: paletteRecommendations[0],
+    paletteRecommendations,
+    accent: getIndustryPalette(category, paletteRecommendations[0]).accent,
     regenerationCount: 0,
     createdAt: now,
     expiresAt: now + 30 * DAY,

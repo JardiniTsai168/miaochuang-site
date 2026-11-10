@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getIndustryPalette } from './industryPalettes'
+import { getIndustryPalette, getIndustryPaletteOptions, paletteIds, palettes } from './industryPalettes'
 
 const industries = ['美髮', '美容／美甲／美睫', '按摩／SPA', '健身／瑜伽／教練', '攝影／設計／個人工作室', '居家清潔／維修服務', '咖啡廳・甜點店', '其他服務業']
 
@@ -25,5 +25,17 @@ describe('industry palettes', () => {
     const palette = getIndustryPalette(industry)
     expect(contrast(palette.ink, palette.background)).toBeGreaterThanOrEqual(7)
     expect(contrast(palette.accent, palette.onAccent)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(paletteIds)('keeps every selectable %s palette readable', (id) => {
+    const palette = palettes[id]
+    expect(contrast(palette.ink, palette.background)).toBeGreaterThanOrEqual(7)
+    expect(contrast(palette.accent, palette.onAccent)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(industries)('offers three distinct fallback recommendations for %s', (industry) => {
+    const recommendations = getIndustryPaletteOptions(industry)
+    expect(recommendations).toHaveLength(3)
+    expect(new Set(recommendations)).toHaveLength(3)
   })
 })

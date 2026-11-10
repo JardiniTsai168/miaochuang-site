@@ -55,6 +55,7 @@ function toDraft(data: Site): BusinessDraft {
     photos,
     reviews: [],
     template: data.template_key || legacyTemplates[data.template],
+    paletteKey: data.palette_key,
     accent: '#171717',
     regenerationCount: 0,
     createdAt: new Date(data.createdAt).getTime(),

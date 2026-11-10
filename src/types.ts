@@ -1,3 +1,5 @@
+import type { PaletteId } from './data/industryPalettes'
+
 export type TemplateId = 'marketing' | 'portfolio' | 'blog' | 'starter'
 
 export type BusinessPhoto = {
@@ -52,6 +54,8 @@ export type BusinessDraft = {
   photos: BusinessPhoto[]
   reviews: BusinessReview[]
   template: TemplateId
+  paletteKey?: PaletteId
+  paletteRecommendations?: PaletteId[]
   accent: string
   regenerationCount: number
   createdAt: number

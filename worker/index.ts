@@ -1,3 +1,5 @@
+import { paletteIds, palettes, type PaletteId } from '../src/data/industryPalettes'
+
 export type Env = {
   OPENROUTER_API_KEY: string
   OPENROUTER_TEXT_MODEL?: string
@@ -28,10 +30,12 @@ type GeneratedContent = {
   tagline: string
   description: string
   advantages: [string, string, string]
+  paletteKeys: [PaletteId, PaletteId, PaletteId]
 }
 
 type SiteContent = {
   category: string
+  paletteKey?: PaletteId
   tagline: string
   description: string
   address: string
@@ -137,20 +141,31 @@ const contentSchema = {
       minItems: 3,
       maxItems: 3,
     },
+    paletteKeys: {
+      type: 'array',
+      description: '依品牌產業、名稱與定位挑選的三組品牌色票 ID，依適合程度排序且不可重複',
+      items: { type: 'string', enum: paletteIds },
+      minItems: 3,
+      maxItems: 3,
+    },
   },
-  required: ['tagline', 'description', 'advantages'],
+  required: ['tagline', 'description', 'advantages', 'paletteKeys'],
   additionalProperties: false,
 }
 
 function parseGenerated(value: unknown): GeneratedContent {
   const content = (value || {}) as Record<string, unknown>
   const advantages = Array.isArray(content.advantages) ? content.advantages.map((item) => clean(item, 80)) : []
+  const paletteKeys = Array.isArray(content.paletteKeys)
+    ? content.paletteKeys.map((item) => clean(item, 40)).filter((item): item is PaletteId => paletteIds.includes(item as PaletteId))
+    : []
   const generated: GeneratedContent = {
     tagline: clean(content.tagline, 80),
     description: clean(content.description, 600),
     advantages: [advantages[0] || '', advantages[1] || '', advantages[2] || ''],
+    paletteKeys: paletteKeys.slice(0, 3) as GeneratedContent['paletteKeys'],
   }
-  if (!generated.tagline || !generated.description || generated.advantages.some((item) => !item)) {
+  if (!generated.tagline || !generated.description || generated.advantages.some((item) => !item) || generated.paletteKeys.some((item) => !item) || new Set(generated.paletteKeys).size !== 3) {
     throw new ApiError(502, 'INVALID_AI_RESPONSE', 'AI 沒有回傳完整網站文案，請再試一次。')
   }
   return generated
@@ -209,6 +224,7 @@ function parseBrandCheckoutInput(value: unknown): BrandCheckoutInput {
     expiresAt: typeof body.expiresAt === 'number' ? body.expiresAt : 0,
     site: {
       category: clean(rawSite.category, 120),
+      paletteKey: paletteIds.includes(clean(rawSite.paletteKey, 40) as PaletteId) ? clean(rawSite.paletteKey, 40) as PaletteId : undefined,
       tagline: clean(rawSite.tagline, 160),
       description: clean(rawSite.description, 1200),
       address: clean(rawSite.address, 300),
@@ -332,6 +348,7 @@ export async function prepareBrandCheckout(
     template_key: input.template,
     html: input.html,
     category: input.site.category,
+    palette_key: input.site.paletteKey || '',
     tagline: input.site.tagline,
     description: input.site.description,
     address: input.site.address,
@@ -413,6 +430,7 @@ export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetc
   const primary = env.OPENROUTER_TEXT_MODEL?.trim() || 'openai/gpt-5.6-luna'
   const fallback = env.OPENROUTER_FALLBACK_MODEL?.trim() || 'anthropic/claude-haiku-5.5'
   const facts = [`產業：${brief.industry}`, `品牌：${brief.brandName}`, `三個優勢：${brief.advantages.join('、')}`, `主要服務／商品：${brief.offerings.filter(Boolean).join('、')}`, `營業時間：${brief.hours || '未提供'}`].join('\n')
+  const paletteCatalog = paletteIds.map((id) => `${id}=${palettes[id].name}（${palettes[id].mood}）`).join('、')
   const response = await fetcher('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -427,11 +445,11 @@ export async function generateContent(brief: BrandBrief, env: Env, fetcher: Fetc
       messages: [
         {
           role: 'system',
-          content: '你是台灣在地服務業網站的資深繁中編輯。只能改寫使用者提供的事實。不得新增價格、折扣、地址、年資、證照、獎項、客戶數、療效、保證或未提供的服務。缺少的資料不要補。只能輸出符合指定 schema 的 JSON。',
+          content: '你是台灣在地服務業網站的資深繁中編輯與品牌色彩顧問。只能改寫使用者提供的事實。不得新增價格、折扣、地址、年資、證照、獎項、客戶數、療效、保證或未提供的服務。缺少的資料不要補。色系只能從提供的安全色票中挑選三組不同選項，依品牌適合程度排序。只能輸出符合指定 schema 的 JSON。',
         },
         {
           role: 'user',
-          content: `${facts}\n請以 JSON 格式產出一個 20 字內主標題、80–140 字品牌介紹，以及三個依原始優勢逐項改寫的短標題。`,
+          content: `${facts}\n可選安全色票：${paletteCatalog}\n請以 JSON 格式產出一個 20 字內主標題、80–140 字品牌介紹、三個依原始優勢逐項改寫的短標題，以及三組最適合此品牌的 paletteKeys。`,
         },
       ],
       response_format: {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, ArrowLeft, BarChart3, Check, ChevronRight, Clock3, ExternalLink, Globe2, Image as ImageIcon, Laptop, LayoutTemplate, Link2, Mail, BadgeCheck, Palette, Pencil, QrCode, RefreshCw, RotateCcw, Search, ShieldCheck, Smartphone, Sparkles, Store, Upload } from 'lucide-react'
 import { createDemoBusiness } from './data/demoBusiness'
-import { getIndustryPalette } from './data/industryPalettes'
+import { getIndustryPalette, normalizePaletteRecommendations, paletteIds, palettes, type PaletteId } from './data/industryPalettes'
 import { createIndustryPhotos } from './data/industryPhotos'
 import { clearDraft, formatRemainingTime, loadDraft, saveDraft } from './lib/draftStorage'
 import { openPreview, renderSite, templateNames } from './lib/renderSite'
@@ -403,7 +403,7 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
 
 function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
   const previewPhotos = draft.photos.filter((photo) => photo.selected).slice(0, 3)
-  const palette = getIndustryPalette(draft.category)
+  const palette = getIndustryPalette(draft.category, draft.paletteKey)
   if (previewPhotos.length === 0 && draft.photos[0]) previewPhotos.push(draft.photos[0])
   return (
     <div className="template-switcher" aria-label="網站版型">
@@ -429,7 +429,8 @@ function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (pa
 }
 
 function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
-  const palette = getIndustryPalette(draft.category)
+  const recommendations = normalizePaletteRecommendations(draft.category, draft.paletteRecommendations)
+  const palette = getIndustryPalette(draft.category, draft.paletteKey)
   return (
     <div className="editor-section template-editor">
       <div className="editor-heading">
@@ -440,11 +441,33 @@ function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patc
         <span className="count-badge">4 選 1</span>
       </div>
       <p className="editor-help">四套皆以 EmDash 官方 Cloudflare template 為基礎；預覽與部署使用同一個 renderer。</p>
-      <div className="industry-palette" aria-label={`目前產業色系：${palette.name}`}>
-        <div className="palette-swatches" aria-hidden="true">
-          {[palette.accent, palette.soft, palette.background].map((color) => <i key={color} style={{ background: color }} />)}
+      <div className="palette-recommendations" aria-label="AI 推薦色系">
+        <div className="palette-recommendations-heading">
+          <div><Sparkles size={15} aria-hidden="true" /><strong>AI 推薦 3 組品牌色系</strong></div>
+          <span>已套用「{palette.name}」</span>
         </div>
-        <div><span>{draft.category || '其他服務業'}色系</span><strong>{palette.name}</strong></div>
+        <div className="palette-options">
+          {recommendations.map((id) => {
+            const option = palettes[id]
+            const selected = palette.id === option.id
+            return (
+              <button
+                key={option.id}
+                type="button"
+                className={selected ? 'active' : ''}
+                aria-pressed={selected}
+                aria-label={`${option.name}：${option.mood}`}
+                onClick={() => update({ paletteKey: option.id, accent: option.accent })}
+              >
+                <span className="palette-swatches" aria-hidden="true">
+                  {[option.accent, option.soft, option.background].map((color) => <i key={color} style={{ background: color }} />)}
+                </span>
+                <span><strong>{option.name}</strong><small>{option.mood}</small></span>
+                {selected && <Check size={15} aria-hidden="true" />}
+              </button>
+            )
+          })}
+        </div>
       </div>
       <TemplateSwitcher draft={draft} update={update} />
       <div className="template-detail">
@@ -820,22 +843,29 @@ export default function App() {
     return templates.some((template) => template.id === value) ? (value as TemplateId) : undefined
   }, [])
   const demoIndustry = useMemo(() => new URLSearchParams(window.location.search).get('industry')?.trim().slice(0, 80), [])
+  const demoPalette = useMemo(() => {
+    const value = new URLSearchParams(window.location.search).get('palette')
+    return paletteIds.includes(value as PaletteId) ? value as PaletteId : undefined
+  }, [])
   const existing = useMemo(() => {
     if (demoStage === 'landing' || demoStage === 'importing') return null
     if (demoStage === 'studio' || demoStage === 'launch' || demoStage === 'domain') {
       const demo = createDemoBusiness()
       const category = demoIndustry || demo.category
-      const palette = getIndustryPalette(category)
+      const paletteRecommendations = normalizePaletteRecommendations(category)
+      const palette = getIndustryPalette(category, demoPalette || paletteRecommendations[0])
       return {
         ...demo,
         category,
         photos: demoIndustry ? createIndustryPhotos(category, demo.offerings) : demo.photos,
         template: demoTemplate || demo.template,
+        paletteKey: palette.id,
+        paletteRecommendations,
         accent: palette.accent,
       }
     }
     return loadDraft()
-  }, [demoStage, demoTemplate, demoIndustry])
+  }, [demoStage, demoTemplate, demoIndustry, demoPalette])
   const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : demoStage === 'launch' ? 'launch' : demoStage === 'domain' ? 'domain' : existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'generated'>('demo')

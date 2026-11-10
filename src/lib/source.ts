@@ -1,4 +1,5 @@
 import { createIndustryPhotos } from '../data/industryPhotos'
+import { getIndustryPalette, normalizePaletteRecommendations, type PaletteId } from '../data/industryPalettes'
 import type { BrandBrief, BusinessDraft, BusinessHours, ImportResult } from '../types'
 
 const API_BASE_URL = (import.meta.env.VITE_GENERATION_API_BASE_URL || '').replace(/\/$/u, '')
@@ -8,6 +9,7 @@ type GeneratedContent = {
   tagline: string
   description: string
   advantages: [string, string, string]
+  paletteKeys?: PaletteId[]
 }
 
 export class GenerationError extends Error {
@@ -65,6 +67,8 @@ export async function generateBusiness(brief: BrandBrief): Promise<ImportResult>
   }
 
   const now = Date.now()
+  const paletteRecommendations = normalizePaletteRecommendations(brief.industry, content.paletteKeys)
+  const palette = getIndustryPalette(brief.industry, paletteRecommendations[0])
   const draft: BusinessDraft = {
     source: 'generated',
     name: brief.brandName.trim(),
@@ -83,7 +87,9 @@ export async function generateBusiness(brief: BrandBrief): Promise<ImportResult>
     photos: createIndustryPhotos(brief.industry.trim(), brief.offerings),
     reviews: [],
     template: 'marketing',
-    accent: '#171717',
+    paletteKey: palette.id,
+    paletteRecommendations,
+    accent: palette.accent,
     regenerationCount: 0,
     createdAt: now,
     expiresAt: now + 30 * DAY,
