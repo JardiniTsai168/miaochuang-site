@@ -51,7 +51,6 @@ img { max-width: 100%; }
 .brand img { width: 72px; height: auto; display: block; }
 .brand-divider { width: 1px; height: 20px; background: var(--line); }
 .brand-name { white-space: nowrap; font-weight: 900; letter-spacing: -.02em; }
-.brand-tag { display: none; color: var(--muted); font: 700 .68rem/1 "DM Sans", sans-serif; letter-spacing: .08em; text-transform: uppercase; }
 .header-note { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: .76rem; font-weight: 600; }
 .header-note span { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 5px #e7f5ef; }
 .text-button, .back-button { min-height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; color: var(--navy); font-size: .82rem; font-weight: 800; }
@@ -358,7 +357,6 @@ img { max-width: 100%; }
 
 @media (min-width: 640px) {
   .brand img { width: 82px; }
-  .brand-tag { display: inline; }
   .launch-header .brand-divider, .launch-header .brand-name { display: inline-flex; }
   .hero-app { padding-top: 52px; }
   .url-control { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 5px; }

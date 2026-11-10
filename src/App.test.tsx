@@ -22,6 +22,7 @@ describe('App', () => {
   it('shows the core promise and pricing disclosure', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: /說出品牌的優勢/ })).toBeInTheDocument()
+    expect(screen.queryByText('by lihiDomain')).not.toBeInTheDocument()
     expect(screen.getByText('生成與 30 天預覽免費')).toBeInTheDocument()
     expect(screen.getByText(/正式收費與網域流程將由 lihi 訂閱機制處理/)).toBeInTheDocument()
   })

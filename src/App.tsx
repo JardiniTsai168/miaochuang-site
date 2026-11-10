@@ -49,13 +49,12 @@ const templates: Array<{ id: TemplateId; name: string; note: string; accent: str
 const importSteps = ['整理品牌重點', '撰寫網站文案', '搭配產業圖片', '套用五種版型']
 const industries = ['美髮', '美容／美甲／美睫', '按摩／SPA', '健身／瑜伽／教練', '攝影／設計／個人工作室', '居家清潔／維修服務', '其他服務業']
 
-function Brand({ compact = false }: { compact?: boolean }) {
+function Brand() {
   return (
     <a className="brand" href="#top" aria-label="秒創網站首頁">
       <img src={`${import.meta.env.BASE_URL}lihi-logo-primary.png`} alt="lihi" />
       <span className="brand-divider" aria-hidden="true" />
       <span className="brand-name">秒創網站</span>
-      {!compact && <span className="brand-tag">by lihiDomain</span>}
     </a>
   )
 }
@@ -63,7 +62,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
 function Header({ onReset, studio = false }: { onReset?: () => void; studio?: boolean }) {
   return (
     <header className={`app-header ${studio ? 'is-studio' : ''}`}>
-      <Brand compact={studio} />
+      <Brand />
       {studio ? (
         <button className="text-button" type="button" onClick={onReset}>
           <RotateCcw size={16} aria-hidden="true" /> 重新開始
@@ -149,7 +148,7 @@ function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief
           <span>正式收費與網域流程將由 lihi 訂閱機制處理</span>
         </section>
       </main>
-      <footer className="app-footer"><Brand compact /><p>利害短網址有限公司・Powered by lihi.io</p></footer>
+      <footer className="app-footer"><Brand /><p>利害短網址有限公司・Powered by lihi.io</p></footer>
     </div>
   )
 }
@@ -383,7 +382,7 @@ function Launch({ draft, onBack, onReset, onDomain }: { draft: BusinessDraft; on
   return (
     <div className="launch-page">
       <header className="app-header is-studio launch-header">
-        <Brand compact />
+        <Brand />
         <div className="launch-header-actions">
           <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} aria-hidden="true" /> 回到網站設計</button>
           <button className="text-button" type="button" onClick={onReset}><RotateCcw size={16} aria-hidden="true" /> 重新開始</button>
@@ -477,7 +476,7 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
   }
 
   return <div className="domain-search-page">
-    <header className="app-header is-studio launch-header"><Brand compact /><div className="launch-header-actions"><button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> 回到上一步</button><button className="text-button" type="button" onClick={onReset}><RotateCcw size={16} /> 重新開始</button></div></header>
+    <header className="app-header is-studio launch-header"><Brand /><div className="launch-header-actions"><button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> 回到上一步</button><button className="text-button" type="button" onClick={onReset}><RotateCcw size={16} /> 重新開始</button></div></header>
     <main className="domain-search-main">
       <header className="domain-search-heading"><p className="eyebrow">品牌網域・名稱建議</p><h1>找到讓人記得住的品牌網域</h1><p>我們先依品牌名稱提供三個方向；選好後會前往 lihi 確認是否可註冊。</p></header>
       <section className="name-suggestion" aria-labelledby="suggestion-title">
