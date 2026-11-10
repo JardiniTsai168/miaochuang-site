@@ -77,6 +77,31 @@ for (const item of cases) {
     viewport: window.innerWidth,
     content: document.documentElement.scrollWidth,
   }))
+  const headerMetrics = await page.evaluate(() => {
+    const header = document.querySelector('.app-header')?.getBoundingClientRect()
+    const logo = document.querySelector('.app-header .brand img')?.getBoundingClientRect()
+    const brandName = document.querySelector('.app-header .brand-name')
+    if (!header || !logo) return undefined
+    const expectedLeft = window.innerWidth <= 390 ? 16 : 100
+    const expectedLogoWidth = window.innerWidth <= 390 ? 72 : 82
+    const logoCenterOffset = Math.abs(logo.top + logo.height / 2 - (header.top + header.height / 2))
+    const brandNameVisible = brandName ? getComputedStyle(brandName).display !== 'none' : false
+    return {
+      headerLeft: header.left,
+      headerHeight: header.height,
+      logoLeft: logo.left,
+      logoWidth: logo.width,
+      logoCenterOffset,
+      brandNameVisible,
+      aligned:
+        Math.abs(header.left - expectedLeft) <= 1 &&
+        Math.abs(logo.left - expectedLeft) <= 1 &&
+        Math.abs(logo.width - expectedLogoWidth) <= 1 &&
+        Math.abs(header.height - 72) <= 1 &&
+        logoCenterOffset <= 1 &&
+        (window.innerWidth <= 390 ? !brandNameVisible : brandNameVisible),
+    }
+  })
   const pageTitle = await page
     .locator('main h1')
     .first()
@@ -207,6 +232,7 @@ for (const item of cases) {
     ...dimensions,
     overflow: dimensions.content > dimensions.viewport,
     brokenImages,
+    ...(headerMetrics === undefined ? {} : { headerMetrics }),
     ...(pageTitle === undefined ? {} : { pageTitle }),
     ...(foldContentFits === undefined ? {} : { foldContentFits }),
     ...(launchFoldFits === undefined ? {} : { launchFoldFits }),
@@ -223,4 +249,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.foldContentFits === false || result.launchFoldFits === false || (result.launchMobileDensity && (!result.launchMobileDensity.allOptionCopySingleLine || result.launchMobileDensity.maxBenefitCardHeight > 100)) || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 56 : 72) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain'))))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.headerMetrics?.aligned === false || result.foldContentFits === false || result.launchFoldFits === false || (result.launchMobileDensity && (!result.launchMobileDensity.allOptionCopySingleLine || result.launchMobileDensity.maxBenefitCardHeight > 100)) || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 56 : 72) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain'))))) process.exitCode = 1
