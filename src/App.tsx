@@ -741,9 +741,10 @@ function Launch({ draft, onBack, onReset, onDomain }: { draft: BusinessDraft; on
   )
 }
 
-function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDraft; onChange: (draft: BusinessDraft) => void; onBack: () => void; onReset: () => void }) {
-  const isDemo = new URLSearchParams(window.location.search).get('demo') === 'domain'
-  const [brandName, setBrandName] = useState(draft.name)
+function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDraft | null; onChange: (draft: BusinessDraft) => void; onBack: () => void; onReset: () => void }) {
+  const searchParams = new URLSearchParams(window.location.search)
+  const isDemo = searchParams.get('demo') === 'domain'
+  const [brandName, setBrandName] = useState(draft?.name || searchParams.get('brand')?.trim().slice(0, 80) || '')
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [remaining, setRemaining] = useState<number | null>(null)
@@ -754,6 +755,7 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
   async function recommend() {
     if (!brandName.trim()) {
       setError('請先輸入品牌名稱。')
+      setLoading(false)
       return
     }
     setLoading(true)
@@ -762,7 +764,7 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
       const result = isDemo
         ? {
             suggestions: ['sunnywalk.com', 'sunnywalk.tw', 'sunnywalkcafe.com'],
-            remaining: 4,
+            remaining: null,
           }
         : await getDomainSuggestions(brandName.trim())
       setSuggestions(result.suggestions)
@@ -788,11 +790,17 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
     setSubmitting(true)
     setError('')
     try {
-      const brandCheckout = await createBrandCheckout(draft, 'brand', query.trim())
-      const nextDraft = { ...draft, brandCheckout }
-      onChange(nextDraft)
-      saveDraft(nextDraft)
-      window.location.assign(brandCheckout.checkoutUrl)
+      if (draft) {
+        const brandCheckout = await createBrandCheckout(draft, 'brand', query.trim())
+        const nextDraft = { ...draft, brandCheckout }
+        onChange(nextDraft)
+        saveDraft(nextDraft)
+        window.location.assign(brandCheckout.checkoutUrl)
+      } else {
+        const searchUrl = new URL('https://app.lihi.io/admin/search')
+        searchUrl.searchParams.set('s', query.trim())
+        window.location.assign(searchUrl.toString())
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '無法前往網域搜尋，請稍後再試。')
       setSubmitting(false)
@@ -825,11 +833,11 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
           </div>
           <div className="suggestion-control">
             <input aria-label="品牌名稱" value={brandName} onChange={(event) => setBrandName(event.target.value)} maxLength={80} />
-            <button className="secondary-button" type="button" onClick={recommend} disabled={loading || remaining === 0}>
+            <button className="secondary-button" type="button" onClick={recommend} disabled={loading}>
               <RefreshCw size={16} /> {loading ? '推薦中…' : '重新推薦'}
             </button>
           </div>
-          <p className="suggestion-limit">每個網路最多可推薦 5 次{remaining !== null ? `・剩餘 ${remaining} 次` : ''}</p>
+          <p className="suggestion-limit">{remaining === null ? '測試期間不限推薦次數' : `每個網路最多可推薦 5 次・剩餘 ${remaining} 次`}</p>
           <div className="suggestion-list" aria-live="polite">
             {suggestions.map((domain) => (
               <button type="button" key={domain} className={query === domain ? 'active' : ''} onClick={() => setQuery(domain)}>
@@ -862,6 +870,7 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
 
 export default function App() {
   const demoStage = useMemo(() => new URLSearchParams(window.location.search).get('demo'), [])
+  const routeStep = useMemo(() => new URLSearchParams(window.location.search).get('step'), [])
   const demoTemplate = useMemo(() => {
     const value = new URLSearchParams(window.location.search).get('template')
     return templates.some((template) => template.id === value) ? (value as TemplateId) : undefined
@@ -890,7 +899,7 @@ export default function App() {
     }
     return loadDraft()
   }, [demoStage, demoTemplate, demoIndustry, demoPalette])
-  const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : demoStage === 'launch' ? 'launch' : demoStage === 'domain' ? 'domain' : existing ? 'studio' : 'landing')
+  const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : demoStage === 'launch' ? 'launch' : demoStage === 'domain' || routeStep === 'domain' ? 'domain' : existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'generated'>('demo')
   const [importStep, setImportStep] = useState(0)
@@ -930,11 +939,30 @@ export default function App() {
     setDraft(null)
     setImportError('')
     setStage('landing')
+    const url = new URL(window.location.href)
+    url.searchParams.delete('step')
+    url.searchParams.delete('brand')
+    window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
+  function openDomainSearch() {
+    const url = new URL(window.location.href)
+    url.searchParams.set('step', 'domain')
+    window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    setStage('domain')
+  }
+
+  function closeDomainSearch() {
+    const url = new URL(window.location.href)
+    url.searchParams.delete('step')
+    url.searchParams.delete('brand')
+    window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    setStage(draft ? 'launch' : 'landing')
   }
 
   if (stage === 'importing') return <Importing activeStep={demoStage === 'importing' ? 2 : importStep} />
-  if (stage === 'domain' && draft) return <DomainSearch draft={draft} onChange={setDraft} onBack={() => setStage('launch')} onReset={reset} />
-  if (stage === 'launch' && draft) return <Launch draft={draft} onBack={() => setStage('studio')} onReset={reset} onDomain={() => setStage('domain')} />
+  if (stage === 'domain') return <DomainSearch draft={draft} onChange={setDraft} onBack={closeDomainSearch} onReset={reset} />
+  if (stage === 'launch' && draft) return <Launch draft={draft} onBack={() => setStage('studio')} onReset={reset} onDomain={openDomainSearch} />
   if (stage === 'studio' && draft) return <Studio draft={draft} mode={mode} onChange={setDraft} onReset={reset} onLaunch={() => setStage('launch')} />
   return <Landing onGenerate={startGeneration} onDemo={useDemo} initialError={importError} />
 }

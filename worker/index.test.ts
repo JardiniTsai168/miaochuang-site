@@ -103,8 +103,11 @@ describe('OpenRouter generation Worker', () => {
   })
 
   it('returns exactly three safe domain suggestions', async () => {
-    const fetcher = vi.fn(async () =>
-      Response.json({
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body))
+      expect(request.messages[0].content).toContain('東東→DD')
+      expect(request.messages[0].content).toContain('168、888')
+      return Response.json({
         choices: [
           {
             message: {
@@ -114,9 +117,28 @@ describe('OpenRouter generation Worker', () => {
             },
           },
         ],
+      })
+    })
+    await expect(suggestDomains({ brandName: '日光髮所' }, env, fetcher as typeof fetch)).resolves.toEqual(['sunnyhair.com', 'sunnyhair.tw', 'sunnyhairstudio.com'])
+  })
+
+  it('keeps domain suggestions unlimited while the test flag is disabled', async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        choices: [{ message: { content: JSON.stringify({ domains: ['dd.com', 'dd168.com', 'dd888.com'] }) } }],
       }),
     )
-    await expect(suggestDomains({ brandName: '日光髮所' }, env, fetcher as typeof fetch)).resolves.toEqual(['sunnyhair.com', 'sunnyhair.tw', 'sunnyhairstudio.com'])
+    const response = await handleRequest(
+      new Request('https://api.example.com/api/domain-suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandName: '東東' }),
+      }),
+      { ...env, DOMAIN_SUGGESTION_LIMIT_ENABLED: 'false', SUGGESTION_LIMITER: undefined },
+      fetcher as typeof fetch,
+    )
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ suggestions: ['dd.com', 'dd168.com', 'dd888.com'], remaining: null })
   })
 
   it('limits each durable IP bucket to five recommendations', async () => {

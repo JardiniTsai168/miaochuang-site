@@ -10,6 +10,7 @@ export type Env = {
   EMDASH_API_TOKEN?: string
   EMDASH_COLLECTION?: string
   LIHI_DOMAIN_SEARCH_URL?: string
+  DOMAIN_SUGGESTION_LIMIT_ENABLED?: string
   EMDASH_SERVICE?: {
     fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>
   }
@@ -528,7 +529,7 @@ export async function suggestDomains(input: DomainSuggestionInput, env: Env, fet
       messages: [
         {
           role: 'system',
-          content: '你是品牌命名與網域顧問。根據品牌名稱提出 3 個簡短、易拼、容易記住的 ASCII 網域名稱。不可宣稱可註冊，避免商標字、連字號與數字。只能輸出 JSON。',
+          content: '你是品牌命名與網域顧問。根據品牌名稱提出 3 個簡短、易拼、容易記住的 ASCII 網域名稱。不可宣稱可註冊，避免商標字與連字號。若中文品牌包含疊字，可考慮取拼音首字母重複縮寫，例如東東→DD、亮亮→LL、美美→MM。若名稱常見、簡短或可能已被註冊，可考慮加入 168、888 等好記數字後綴。三個結果應包含不同命名方向，只能輸出 JSON。',
         },
         { role: 'user', content: `品牌名稱：${input.brandName}` },
       ],
@@ -585,7 +586,7 @@ export async function handleRequest(request: Request, env: Env, fetcher: Fetcher
       return json(request, env, await generateContent(parseBrief(body), env, fetcher))
     }
     if (request.method === 'POST' && url.pathname === '/api/domain-suggestions') {
-      const remaining = await consumeSuggestionQuota(request, env)
+      const remaining = env.DOMAIN_SUGGESTION_LIMIT_ENABLED === 'true' ? await consumeSuggestionQuota(request, env) : null
       return json(request, env, {
         suggestions: await suggestDomains(parseDomainSuggestionInput(body), env, fetcher),
         remaining,

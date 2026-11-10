@@ -78,7 +78,7 @@ describe('App', () => {
       vi.fn(async () =>
         Response.json({
           suggestions: ['sunnywalk.com', 'sunnywalk.tw', 'sunnywalkcafe.com'],
-          remaining: 4,
+          remaining: null,
         }),
       ),
     )
@@ -86,8 +86,15 @@ describe('App', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: /找到讓人記得住的品牌網域/ })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: /sunnywalk.com/ })).toBeInTheDocument()
-    expect(screen.getByText(/剩餘 4 次/)).toBeInTheDocument()
+    expect(screen.getByText('測試期間不限推薦次數')).toBeInTheDocument()
     vi.unstubAllGlobals()
+  })
+
+  it('opens the domain suggestion page from its independent URL without a saved draft', () => {
+    window.history.replaceState({}, '', `/?step=domain&brand=${encodeURIComponent('東東')}`)
+    render(<App />)
+    expect(screen.getByRole('heading', { name: /找到讓人記得住的品牌網域/ })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: '品牌名稱' })).toHaveValue('東東')
   })
 
   it('opens a requested template directly for review', () => {

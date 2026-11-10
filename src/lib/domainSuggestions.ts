@@ -1,6 +1,6 @@
 const API_BASE_URL = (import.meta.env.VITE_GENERATION_API_BASE_URL || '').replace(/\/$/u, '')
 
-export type DomainSuggestionResult = { suggestions: string[]; remaining: number }
+export type DomainSuggestionResult = { suggestions: string[]; remaining: number | null }
 
 export async function getDomainSuggestions(brandName: string): Promise<DomainSuggestionResult> {
   const response = await fetch(`${API_BASE_URL}/api/domain-suggestions`, {

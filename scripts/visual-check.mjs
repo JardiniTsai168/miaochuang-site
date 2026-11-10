@@ -29,8 +29,8 @@ const cases = [
   { name: 'studio-spa-ochre-mobile', path: `/?demo=studio&template=starter&industry=${encodeURIComponent('按摩／SPA')}&palette=ochre`, width: 390, height: 844, clicks: ['查看網站', '手機版預覽'] },
   { name: 'launch-desktop', path: '/?demo=launch', width: 1440, height: 900 },
   { name: 'launch-mobile', path: '/?demo=launch', width: 390, height: 844 },
-  { name: 'domain-desktop', path: '/?demo=domain', width: 1440, height: 900 },
-  { name: 'domain-mobile', path: '/?demo=domain', width: 390, height: 844 },
+  { name: 'domain-desktop', path: `/?demo=domain&step=domain&brand=${encodeURIComponent('東東')}`, width: 1440, height: 900 },
+  { name: 'domain-mobile', path: `/?demo=domain&step=domain&brand=${encodeURIComponent('東東')}`, width: 390, height: 844 },
 ]
 
 const results = []

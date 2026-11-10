@@ -59,7 +59,7 @@ npx wrangler secret put EMDASH_API_TOKEN
 
 - `POST /api/generate-content`：接收品牌 brief，回傳主標題、品牌介紹與三個優勢。
 - `POST /api/brand-checkout`：建立或更新未發布的品牌 handoff，回傳帶關聯 ID 的 lihi 網域購買網址。
-- `POST /api/domain-suggestions`：依品牌名稱產生 3 個網域建議；Durable Object 依 IP 雜湊永久限制最多 5 次。
+- `POST /api/domain-suggestions`：依品牌名稱產生 3 個網域建議；測試期間 `DOMAIN_SUGGESTION_LIMIT_ENABLED=false` 為無限次，恢復限制時由 Durable Object 依 IP 雜湊計數最多 5 次。
 - `GET /health`：Worker health check。
 
 付款成功不能由瀏覽器回傳值判定。處理 `/ajax/checkout/tappay` 的 lihi backend 必須在 invoice 已付款且網域購買成立後，將 `source=miaochuang:<handoffId>` 以簽章 webhook 傳給 provisioning service；該 service 需做簽章驗證與 invoice idempotency，才可建立專屬 EmDash runtime 並匯入 handoff。
