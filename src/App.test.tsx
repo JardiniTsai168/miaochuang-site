@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import App from './App'
+import App, { describeDomainSuggestion } from './App'
 import { createDemoBusiness } from './data/demoBusiness'
 import { saveDraft } from './lib/draftStorage'
 
@@ -89,8 +89,18 @@ describe('App', () => {
     const suggestionSection = screen.getByRole('heading', { name: '你的品牌名稱' }).closest('section')
     expect(searchForm?.nextElementSibling).toBe(suggestionSection)
     expect(await screen.findByRole('button', { name: /sunnywalk.com/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /免費查詢是否可註冊/ })).toBeInTheDocument()
+    expect(screen.getByText('查詢不會自動購買')).toBeInTheDocument()
+    expect(screen.getByText('AI 名稱建議，尚未確認可註冊')).toBeInTheDocument()
+    expect(screen.getAllByText('保留完整品牌辨識')).toHaveLength(2)
     expect(screen.getByText('測試期間不限推薦次數')).toBeInTheDocument()
     vi.unstubAllGlobals()
+  })
+
+  it('explains repeated-name and numeric domain suggestions', () => {
+    expect(describeDomainSuggestion('dd168.com', '東東')).toBe('疊字縮寫＋吉利數字')
+    expect(describeDomainSuggestion('mmstudio.com', '美美')).toBe('疊字品牌縮寫，簡短好輸入')
+    expect(describeDomainSuggestion('sunwalk888.com', '日光散步')).toBe('品牌名稱＋好記數字')
   })
 
   it('opens the domain suggestion page from its independent URL without a saved draft', () => {

@@ -44,6 +44,21 @@ const templates: Array<{
 const importSteps = ['整理品牌重點', '撰寫網站文案', '搭配產業圖片', '套用官方版型']
 const industries = ['美髮', '美容／美甲／美睫', '按摩／SPA', '健身／瑜伽／教練', '攝影／設計／個人工作室', '居家清潔／維修服務', '其他服務業']
 
+export function describeDomainSuggestion(domain: string, brandName: string) {
+  const label = domain.toLowerCase().split('.')[0] || ''
+  const characters = Array.from(brandName.trim())
+  const isRepeatedName = characters.length === 2 && characters[0] === characters[1]
+  const usesRepeatedInitials = /^([a-z])\1/.test(label)
+  const hasMemorableNumber = /(?:168|888)$/.test(label)
+
+  if (isRepeatedName && usesRepeatedInitials && hasMemorableNumber) return '疊字縮寫＋吉利數字'
+  if (isRepeatedName && usesRepeatedInitials) return '疊字品牌縮寫，簡短好輸入'
+  if (hasMemorableNumber) return '品牌名稱＋好記數字'
+  if (label.length <= 8) return '名稱簡短，好輸入也好分享'
+  if (/(?:studio|cafe|shop|design|salon)$/.test(label)) return '名稱直接帶出品牌類型'
+  return '保留完整品牌辨識'
+}
+
 function Brand() {
   return (
     <a className="brand" href="#top" aria-label="秒創網站首頁">
@@ -824,24 +839,35 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
         <header className="domain-search-heading">
           <p className="eyebrow">品牌網域・名稱建議</p>
           <h1>找到讓人記得住的品牌網域</h1>
-          <p>我們先依品牌名稱提供三個方向；選好後會前往 lihi 確認是否可註冊。</p>
+          <p>輸入想查詢的網域，或從下方 AI 建議挑選名稱，再前往 lihi 確認價格與註冊狀態。</p>
         </header>
+        <ol className="domain-steps" aria-label="網域申請流程">
+          <li><span>1</span>選擇名稱</li>
+          <li><span>2</span>查詢註冊狀態</li>
+          <li><span>3</span>確認後再購買</li>
+        </ol>
         <form className="domain-query" onSubmit={continueToLihi}>
           <label htmlFor="domain-query">搜尋你的品牌網域</label>
           <div>
             <Search aria-hidden="true" />
             <input id="domain-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="例如 yourbrand.com" autoComplete="off" />
             <button className="primary-button" disabled={submitting}>
-              {submitting ? '準備中…' : '前往 lihi 查詢'} <ArrowRight size={17} />
+              {submitting ? '準備中…' : '免費查詢是否可註冊'} <ArrowRight size={17} />
             </button>
           </div>
-          <p>實際價格與可註冊狀態，以 lihi 搜尋結果為準。</p>
+          <p>查詢後會前往 lihi 確認價格與可註冊狀態。</p>
+          <ul className="domain-trust" aria-label="查詢保障">
+            <li><ShieldCheck aria-hidden="true" /> 免費查詢</li>
+            <li><BadgeCheck aria-hidden="true" /> 查詢不會自動購買</li>
+            <li><Globe2 aria-hidden="true" /> 由 lihi.io 提供查詢</li>
+          </ul>
         </form>
         <section className="name-suggestion" aria-labelledby="suggestion-title">
           <div>
             <p>NAME SUGGESTION</p>
             <h2 id="suggestion-title">你的品牌名稱</h2>
           </div>
+          <p className="suggestion-disclaimer"><Sparkles aria-hidden="true" /> AI 名稱建議，尚未確認可註冊</p>
           <div className="suggestion-control">
             <input aria-label="品牌名稱" value={brandName} onChange={(event) => setBrandName(event.target.value)} maxLength={80} />
             <button className="secondary-button" type="button" onClick={recommend} disabled={loading}>
@@ -853,7 +879,8 @@ function DomainSearch({ draft, onChange, onBack, onReset }: { draft: BusinessDra
             {suggestions.map((domain) => (
               <button type="button" key={domain} className={query === domain ? 'active' : ''} onClick={() => setQuery(domain)}>
                 <span>{domain}</span>
-                <small>選擇這個名稱</small>
+                <small>{describeDomainSuggestion(domain, brandName)}</small>
+                <strong>{query === domain ? '已套用' : '套用這個名稱'} <ChevronRight size={13} aria-hidden="true" /></strong>
               </button>
             ))}
           </div>
