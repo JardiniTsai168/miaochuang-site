@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, ArrowLeft, BarChart3, Check, ChevronRight, Clock3, ExternalLink, Globe2, Image as ImageIcon, Laptop, LayoutTemplate, Link2, Mail, BadgeCheck, Palette, Pencil, QrCode, RefreshCw, RotateCcw, Search, ShieldCheck, Smartphone, Sparkles, Store, Upload } from 'lucide-react'
 import { createDemoBusiness } from './data/demoBusiness'
+import { getIndustryPalette } from './data/industryPalettes'
+import { createIndustryPhotos } from './data/industryPhotos'
 import { clearDraft, formatRemainingTime, loadDraft, saveDraft } from './lib/draftStorage'
 import { openPreview, renderSite, templateNames } from './lib/renderSite'
 import { generateBusiness, validateBrief } from './lib/source'
@@ -401,12 +403,13 @@ function PhotoEditor({ draft, update }: { draft: BusinessDraft; update: (patch: 
 
 function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
   const previewPhotos = draft.photos.filter((photo) => photo.selected).slice(0, 3)
+  const palette = getIndustryPalette(draft.category)
   if (previewPhotos.length === 0 && draft.photos[0]) previewPhotos.push(draft.photos[0])
   return (
     <div className="template-switcher" aria-label="網站版型">
       {templates.map((template) => (
-        <button key={template.id} type="button" className={draft.template === template.id ? 'active' : ''} onClick={() => update({ template: template.id, accent: template.accent })} aria-pressed={draft.template === template.id}>
-          <span className={`template-thumb is-${template.id}`} style={{ '--template-accent': template.accent } as React.CSSProperties}>
+        <button key={template.id} type="button" className={draft.template === template.id ? 'active' : ''} onClick={() => update({ template: template.id, accent: palette.accent })} aria-pressed={draft.template === template.id}>
+          <span className={`template-thumb is-${template.id}`} style={{ '--template-accent': palette.accent, '--template-bg': palette.background, '--template-soft': palette.soft, '--template-ink': palette.ink, '--template-muted': palette.muted, '--template-surface': palette.surface } as React.CSSProperties}>
             {previewPhotos.map((photo, index) => (
               <img key={photo.id} className={`thumb-photo-${index + 1}`} src={photo.url} alt="" aria-hidden="true" />
             ))}
@@ -426,6 +429,7 @@ function TemplateSwitcher({ draft, update }: { draft: BusinessDraft; update: (pa
 }
 
 function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patch: Partial<BusinessDraft>) => void }) {
+  const palette = getIndustryPalette(draft.category)
   return (
     <div className="editor-section template-editor">
       <div className="editor-heading">
@@ -436,6 +440,12 @@ function TemplateEditor({ draft, update }: { draft: BusinessDraft; update: (patc
         <span className="count-badge">4 選 1</span>
       </div>
       <p className="editor-help">四套皆以 EmDash 官方 Cloudflare template 為基礎；預覽與部署使用同一個 renderer。</p>
+      <div className="industry-palette" aria-label={`目前產業色系：${palette.name}`}>
+        <div className="palette-swatches" aria-hidden="true">
+          {[palette.accent, palette.soft, palette.background].map((color) => <i key={color} style={{ background: color }} />)}
+        </div>
+        <div><span>{draft.category || '其他服務業'}色系</span><strong>{palette.name}</strong></div>
+      </div>
       <TemplateSwitcher draft={draft} update={update} />
       <div className="template-detail">
         <span>目前選擇</span>
@@ -809,14 +819,23 @@ export default function App() {
     const value = new URLSearchParams(window.location.search).get('template')
     return templates.some((template) => template.id === value) ? (value as TemplateId) : undefined
   }, [])
+  const demoIndustry = useMemo(() => new URLSearchParams(window.location.search).get('industry')?.trim().slice(0, 80), [])
   const existing = useMemo(() => {
     if (demoStage === 'landing' || demoStage === 'importing') return null
     if (demoStage === 'studio' || demoStage === 'launch' || demoStage === 'domain') {
       const demo = createDemoBusiness()
-      return demoTemplate ? { ...demo, template: demoTemplate } : demo
+      const category = demoIndustry || demo.category
+      const palette = getIndustryPalette(category)
+      return {
+        ...demo,
+        category,
+        photos: demoIndustry ? createIndustryPhotos(category, demo.offerings) : demo.photos,
+        template: demoTemplate || demo.template,
+        accent: palette.accent,
+      }
     }
     return loadDraft()
-  }, [demoStage, demoTemplate])
+  }, [demoStage, demoTemplate, demoIndustry])
   const [stage, setStage] = useState<AppStage>(demoStage === 'importing' ? 'importing' : demoStage === 'launch' ? 'launch' : demoStage === 'domain' ? 'domain' : existing ? 'studio' : 'landing')
   const [draft, setDraft] = useState<BusinessDraft | null>(existing)
   const [mode, setMode] = useState<'demo' | 'generated'>('demo')

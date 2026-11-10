@@ -97,6 +97,13 @@ describe('App', () => {
     expect(screen.getByText('Portfolio', { selector: '.template-detail strong' })).toBeInTheDocument()
   })
 
+  it('shows the automatically selected industry color palette', () => {
+    window.history.replaceState({}, '', `/?demo=studio&industry=${encodeURIComponent('按摩／SPA')}`)
+    render(<App />)
+    expect(screen.getByLabelText('目前產業色系：森林鼠尾草')).toBeInTheDocument()
+    expect(screen.getByText('按摩／SPA色系')).toBeInTheDocument()
+  })
+
   it('makes all four official EmDash templates visible and selectable', async () => {
     const user = userEvent.setup()
     saveDraft(createDemoBusiness())

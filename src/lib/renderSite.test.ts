@@ -43,6 +43,21 @@ describe('renderSite', () => {
     expect(starter.indexOf('id="services"')).toBeLessThan(starter.indexOf('id="about"'))
   })
 
+  it.each([
+    ['美髮', 'hair', '#8C4938'],
+    ['美容／美甲／美睫', 'beauty', '#8F3F68'],
+    ['按摩／SPA', 'spa', '#3F6B55'],
+    ['健身／瑜伽／教練', 'fitness', '#245B91'],
+    ['攝影／設計／個人工作室', 'creative', '#4A45A5'],
+    ['居家清潔／維修服務', 'cleaning', '#176B72'],
+    ['咖啡廳・甜點店', 'food', '#8A4932'],
+    ['其他服務業', 'service', '#B82F67'],
+  ] as const)('applies the %s industry palette', (category, palette, accent) => {
+    const html = renderSite({ ...createDemoBusiness(), category })
+    expect(html).toContain(`data-palette="${palette}"`)
+    expect(html).toContain(`--industry-accent:${accent}`)
+  })
+
   it.each(['marketing', 'portfolio', 'blog', 'starter'] as const)('caps the %s template title at the approved size', (template) => {
     const html = renderSite({ ...createDemoBusiness(), template })
     expect(html).toContain('font-size:clamp(40px,4.2vw,48px)')

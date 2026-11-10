@@ -1,4 +1,5 @@
 import type { BusinessDraft, BusinessPhoto, TemplateId } from '../types'
+import { getIndustryPalette, industryPaletteStyle } from '../data/industryPalettes'
 
 // Preview and published HTML share these renderers. Their information architecture
 // and visual grammar follow emdash-cms/templates@a7bb43d Cloudflare templates.
@@ -96,8 +97,16 @@ const templateCss: Record<TemplateId, string> = {
   starter: starterCss,
 }
 
+const industryCss = `
+.official-marketing{--ink:var(--industry-ink);--muted:var(--industry-muted);--sunken:var(--industry-soft);background:var(--industry-bg)}.official-marketing .floating-nav{border-color:var(--industry-border);background:color-mix(in srgb,var(--industry-surface) 90%,transparent)}.official-marketing .announcement{background:var(--industry-soft);color:var(--industry-accent)}.official-marketing .button{border-color:var(--industry-border);background:var(--industry-surface)}.official-marketing .button.primary{border-color:var(--industry-accent);background:var(--industry-accent);color:var(--industry-on-accent)}.official-marketing .sunken{background:radial-gradient(circle at 80% 0,var(--industry-surface),transparent 34%),var(--industry-soft)}.official-marketing .eyebrow{color:var(--industry-accent)}.official-marketing .services-grid article{background:var(--industry-surface)}.official-marketing .split li,.official-marketing .site-footer{border-color:var(--industry-border)}
+.official-portfolio{--ink:var(--industry-ink);--paper:var(--industry-bg)}.official-portfolio .portfolio-nav,.official-portfolio .portfolio-about,.official-portfolio .portfolio-contact{border-color:var(--industry-ink)}.official-portfolio .hero>p,.official-portfolio .portfolio-about>p,.official-portfolio .portfolio-contact>p{color:var(--industry-accent)}.official-portfolio .hero>span,.official-portfolio .project p,.official-portfolio .portfolio-about>div>p{color:var(--industry-muted)}.official-portfolio .portfolio-about li{border-color:var(--industry-border)}.official-portfolio .button{border-color:var(--industry-accent)}.official-portfolio .button.primary{background:var(--industry-accent);color:var(--industry-on-accent)}
+.official-blog{--ink:var(--industry-ink);--accent:var(--industry-accent);--paper:var(--industry-bg)}.official-blog nav,.official-blog .featured,.official-blog .blog-about,.official-blog .blog-about li{border-color:var(--industry-border)}.official-blog .featured h1+p,.official-blog .story-list article>span,.official-blog .blog-about article>p{color:var(--industry-muted)}.official-blog .button.primary{color:var(--industry-on-accent)}
+.official-starter{--ink:var(--industry-ink);--muted:var(--industry-muted);--brand:var(--industry-accent);background:var(--industry-bg)}.official-starter .button,.official-starter .section,.official-starter .starter-services article,.official-starter .starter-about li,.official-starter .site-footer{border-color:var(--industry-border)}.official-starter .starter-services article{background:var(--industry-surface)}.official-starter .starter-services article>span{background:var(--industry-soft)}.official-starter .nav-cta,.official-starter .button.primary{color:var(--industry-on-accent)}
+`
+
 export function renderSite(draft: BusinessDraft, options: { noindex?: boolean } = { noindex: true }): string {
   const photos = selectedPhotos(draft)
+  const palette = getIndustryPalette(draft.category)
   const title = `${escapeHtml(draft.name)}｜${escapeHtml(draft.category)}`
   const schema = {
     '@context': 'https://schema.org',
@@ -108,7 +117,7 @@ export function renderSite(draft: BusinessDraft, options: { noindex?: boolean } 
     telephone: draft.phone,
     image: photos.map((item) => item.url).filter((url) => /^https?:|^\/(?!\/)/u.test(url)),
   }
-  return `<!doctype html><html lang="zh-Hant" data-layout="${draft.template}"><head><meta charset="utf-8"><base target="_blank"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${title}</title><meta name="description" content="${escapeHtml(draft.description)}">${options.noindex !== false ? '<meta name="robots" content="noindex,nofollow,noarchive">' : ''}<meta property="og:title" content="${title}">${photos[0] && !photos[0].url.startsWith('data:') ? `<meta property="og:image" content="${safeUrl(photos[0].url)}">` : ''}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet"><style>${baseCss}${templateCss[draft.template]}</style><script type="application/ld+json">${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script></head><body>${renderers[draft.template](draft, photos)}</body></html>`
+  return `<!doctype html><html lang="zh-Hant" data-layout="${draft.template}" data-palette="${palette.id}"><head><meta charset="utf-8"><base target="_blank"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${title}</title><meta name="description" content="${escapeHtml(draft.description)}">${options.noindex !== false ? '<meta name="robots" content="noindex,nofollow,noarchive">' : ''}<meta property="og:title" content="${title}">${photos[0] && !photos[0].url.startsWith('data:') ? `<meta property="og:image" content="${safeUrl(photos[0].url)}">` : ''}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet"><style>${baseCss}${templateCss[draft.template]}${industryCss}</style><script type="application/ld+json">${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script></head><body style="${industryPaletteStyle(draft.category)}">${renderers[draft.template](draft, photos)}</body></html>`
 }
 
 export function openPreview(draft: BusinessDraft): void {
