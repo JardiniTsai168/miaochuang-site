@@ -88,13 +88,15 @@ for (const item of cases) {
     const brandNameVisible = brandName ? getComputedStyle(brandName).display !== 'none' : false
     return {
       headerLeft: header.left,
+      headerWidth: header.width,
       headerHeight: header.height,
       logoLeft: logo.left,
       logoWidth: logo.width,
       logoCenterOffset,
       brandNameVisible,
       aligned:
-        Math.abs(header.left - expectedLeft) <= 1 &&
+        Math.abs(header.left) <= 1 &&
+        Math.abs(header.width - window.innerWidth) <= 1 &&
         Math.abs(logo.left - expectedLeft) <= 1 &&
         Math.abs(logo.width - expectedLogoWidth) <= 1 &&
         Math.abs(header.height - 72) <= 1 &&
@@ -102,6 +104,29 @@ for (const item of cases) {
         (window.innerWidth <= 390 ? !brandNameVisible : brandNameVisible),
     }
   })
+  const contentShell = await page.evaluate((caseName) => {
+    const selector = caseName.startsWith('landing')
+      ? '.hero-app'
+      : caseName.startsWith('importing')
+        ? '.import-panel'
+        : caseName.startsWith('studio')
+          ? '.studio-layout'
+          : caseName.startsWith('launch')
+            ? '.launch-main'
+            : caseName.startsWith('domain')
+              ? '.domain-search-main'
+              : undefined
+    const shell = selector ? document.querySelector(selector)?.getBoundingClientRect() : undefined
+    if (!shell) return undefined
+    const expectedLeft = window.innerWidth <= 390 ? 16 : 100
+    const expectedWidth = window.innerWidth <= 390 ? 358 : 1240
+    return {
+      selector,
+      left: shell.left,
+      width: shell.width,
+      aligned: Math.abs(shell.left - expectedLeft) <= 1 && Math.abs(shell.width - expectedWidth) <= 1,
+    }
+  }, item.name)
   const pageTitle = await page
     .locator('main h1')
     .first()
@@ -233,6 +258,7 @@ for (const item of cases) {
     overflow: dimensions.content > dimensions.viewport,
     brokenImages,
     ...(headerMetrics === undefined ? {} : { headerMetrics }),
+    ...(contentShell === undefined ? {} : { contentShell }),
     ...(pageTitle === undefined ? {} : { pageTitle }),
     ...(foldContentFits === undefined ? {} : { foldContentFits }),
     ...(launchFoldFits === undefined ? {} : { launchFoldFits }),
@@ -249,4 +275,4 @@ for (const item of cases) {
 await browser.close()
 console.log(JSON.stringify(results, null, 2))
 
-if (results.some((result) => result.overflow || result.brokenImages > 0 || result.headerMetrics?.aligned === false || result.foldContentFits === false || result.launchFoldFits === false || (result.launchMobileDensity && (!result.launchMobileDensity.allOptionCopySingleLine || result.launchMobileDensity.maxBenefitCardHeight > 100)) || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 56 : 72) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain'))))) process.exitCode = 1
+if (results.some((result) => result.overflow || result.brokenImages > 0 || result.headerMetrics?.aligned === false || result.contentShell?.aligned === false || result.foldContentFits === false || result.launchFoldFits === false || (result.launchMobileDensity && (!result.launchMobileDensity.allOptionCopySingleLine || result.launchMobileDensity.maxBenefitCardHeight > 100)) || result.previewLinkSafe === false || result.editorPanelScrolls === false || (result.availablePhotos !== undefined && result.availablePhotos !== 5) || (result.pageTitle && (result.pageTitle.fontSize > (result.width <= 390 ? 38 : 48) || result.pageTitle.lineCount > 2)) || (result.heroTitle && (result.heroTitle.fontSize > (result.width <= 390 ? 36 : 48) || result.heroTitle.lineCount > 2 || result.heroTitle.outOfHero)) || (result.heroDecorOverlap !== undefined && result.heroDecorOverlap > 0) || (result.templateMetrics && (result.templateMetrics.frameOverflow || result.templateMetrics.sectionPaddingMax > (result.width <= 390 ? 56 : 72) || result.templateMetrics.protectedImageFits.some((fit) => fit !== 'contain'))))) process.exitCode = 1
