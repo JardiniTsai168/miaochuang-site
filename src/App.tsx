@@ -259,33 +259,48 @@ function Landing({ onGenerate, onDemo, initialError = '' }: { onGenerate: (brief
 }
 
 function Importing({ activeStep }: { activeStep: number }) {
+  const completedSteps = Math.min(activeStep + 1, importSteps.length)
+
   return (
     <div className="import-screen">
       <Header studio />
       <main className="import-panel" aria-live="polite">
-        <div className="import-intro">
-          <div className="import-orbit">
-            <Store size={34} aria-hidden="true" />
-            <span />
-            <span />
+        <section className="import-workbench" aria-labelledby="import-title">
+          <div className="import-intro">
+            <div className="import-orbit">
+              <Store size={34} aria-hidden="true" />
+              <span />
+              <span />
+            </div>
+            <div className="import-copy">
+              <p className="eyebrow">正在建立你的網站</p>
+              <h1 id="import-title">
+                正在整理資料，
+                <br />
+                建立完整的店家故事。
+              </h1>
+              <p className="import-lead">我們正在整理你提供的品牌重點、撰寫文案並挑選適合的圖片。</p>
+            </div>
           </div>
-          <div>
-            <p className="eyebrow">正在建立你的網站</p>
-            <h1>
-              正在整理資料，
-              <br />
-              建立完整的店家故事。
-            </h1>
+          <div className="import-progress">
+            <div className="import-progress-head">
+              <span>建站進度</span>
+              <strong>{completedSteps} / {importSteps.length}</strong>
+            </div>
+            <div className="import-progress-bar" aria-hidden="true">
+              <span style={{ width: `${(completedSteps / importSteps.length) * 100}%` }} />
+            </div>
+            <ol>
+              {importSteps.map((step, index) => (
+                <li key={step} className={index < activeStep ? 'done' : index === activeStep ? 'active' : ''}>
+                  <span>{index < activeStep ? <Check size={15} /> : index + 1}</span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+            <p className="import-note"><Clock3 size={15} aria-hidden="true" /> 通常約 20 秒，完成後會自動進入設計頁。</p>
           </div>
-        </div>
-        <ol>
-          {importSteps.map((step, index) => (
-            <li key={step} className={index < activeStep ? 'done' : index === activeStep ? 'active' : ''}>
-              <span>{index < activeStep ? <Check size={15} /> : index + 1}</span>
-              {step}
-            </li>
-          ))}
-        </ol>
+        </section>
       </main>
     </div>
   )

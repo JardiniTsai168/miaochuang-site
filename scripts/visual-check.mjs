@@ -151,39 +151,42 @@ for (const item of cases) {
     }
   }, item.name)
   const importLayout = item.name.startsWith('importing')
-    ? await page.evaluate(() => {
+      ? await page.evaluate(() => {
         const panel = document.querySelector('.import-panel')?.getBoundingClientRect()
+        const workbench = document.querySelector('.import-workbench')?.getBoundingClientRect()
         const intro = document.querySelector('.import-intro')?.getBoundingClientRect()
+        const progress = document.querySelector('.import-progress')?.getBoundingClientRect()
         const steps = document.querySelector('.import-panel ol')?.getBoundingClientRect()
         const header = document.querySelector('.app-header')?.getBoundingClientRect()
-        if (!panel || !intro || !steps || !header) return undefined
+        const bar = document.querySelector('.import-progress-bar')?.getBoundingClientRect()
+        const fill = document.querySelector('.import-progress-bar span')?.getBoundingClientRect()
+        if (!panel || !workbench || !intro || !progress || !steps || !header || !bar || !fill) return undefined
         const desktop = window.innerWidth > 390
-        const centerDelta = Math.abs((intro.top + intro.height / 2) - (steps.top + steps.height / 2))
-        const gap = desktop ? steps.left - intro.right : steps.top - intro.bottom
-        const groupTop = Math.min(intro.top, steps.top)
-        const groupBottom = Math.max(intro.bottom, steps.bottom)
-        const viewportCenterDelta = Math.abs((groupTop + groupBottom) / 2 - (header.bottom + window.innerHeight) / 2)
+        const viewportCenterDelta = Math.abs((workbench.top + workbench.bottom) / 2 - (header.bottom + window.innerHeight) / 2)
+        const fillRatio = fill.width / bar.width
         return {
+          workbenchLeft: workbench.left,
+          workbenchWidth: workbench.width,
+          workbenchHeight: workbench.height,
           introLeft: intro.left,
           introWidth: intro.width,
-          stepsLeft: steps.left,
-          stepsWidth: steps.width,
-          gap,
-          centerDelta,
+          progressLeft: progress.left,
+          progressWidth: progress.width,
+          sectionGap: desktop ? progress.left - intro.right : progress.top - intro.bottom,
           viewportCenterDelta,
+          fillRatio,
           aligned: desktop
-            ? Math.abs(intro.left - 260) <= 1 &&
-              Math.abs(intro.width - 480) <= 1 &&
-              Math.abs(steps.left - 820) <= 1 &&
-              Math.abs(steps.width - 360) <= 1 &&
-              Math.abs(gap - 80) <= 1 &&
-              centerDelta <= 1 &&
+            ? Math.abs(workbench.left - 240) <= 1 &&
+              Math.abs(workbench.width - 960) <= 1 &&
+              workbench.height <= 500 &&
+              Math.abs(intro.top - progress.top) <= 1 &&
+              Math.abs(intro.bottom - progress.bottom) <= 1 &&
+              Math.abs(progress.left - intro.right) <= 1 &&
               viewportCenterDelta <= 1
-            : Math.abs(intro.left - 10) <= 1 &&
-              Math.abs(intro.width - 370) <= 1 &&
-              Math.abs(steps.left - 10) <= 1 &&
-              Math.abs(steps.width - 370) <= 1 &&
-              Math.abs(gap - 28) <= 1 &&
+            : Math.abs(workbench.left - 10) <= 1 &&
+              Math.abs(workbench.width - 370) <= 1 &&
+              workbench.height <= 700 &&
+              Math.abs(progress.top - intro.bottom) <= 1 &&
               viewportCenterDelta <= 1,
         }
       })
