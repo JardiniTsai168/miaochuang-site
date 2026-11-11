@@ -162,7 +162,8 @@ for (const item of cases) {
         const fill = document.querySelector('.import-progress-bar span')?.getBoundingClientRect()
         if (!panel || !workbench || !intro || !progress || !steps || !header || !bar || !fill) return undefined
         const desktop = window.innerWidth > 390
-        const viewportCenterDelta = Math.abs((workbench.top + workbench.bottom) / 2 - (header.bottom + window.innerHeight) / 2)
+        const workbenchTopOffset = workbench.top - header.bottom
+        const resetVisible = [...document.querySelectorAll('button')].some((button) => button.textContent?.includes('重新開始'))
         const fillRatio = fill.width / bar.width
         return {
           workbenchLeft: workbench.left,
@@ -173,7 +174,8 @@ for (const item of cases) {
           progressLeft: progress.left,
           progressWidth: progress.width,
           sectionGap: desktop ? progress.left - intro.right : progress.top - intro.bottom,
-          viewportCenterDelta,
+          workbenchTopOffset,
+          resetVisible,
           fillRatio,
           aligned: desktop
             ? Math.abs(workbench.left - 240) <= 1 &&
@@ -182,12 +184,14 @@ for (const item of cases) {
               Math.abs(intro.top - progress.top) <= 1 &&
               Math.abs(intro.bottom - progress.bottom) <= 1 &&
               Math.abs(progress.left - intro.right) <= 1 &&
-              viewportCenterDelta <= 1
+              Math.abs(workbenchTopOffset - 64) <= 1 &&
+              !resetVisible
             : Math.abs(workbench.left - 10) <= 1 &&
               Math.abs(workbench.width - 370) <= 1 &&
               workbench.height <= 700 &&
               Math.abs(progress.top - intro.bottom) <= 1 &&
-              viewportCenterDelta <= 1,
+              Math.abs(workbenchTopOffset - 20) <= 1 &&
+              !resetVisible,
         }
       })
     : undefined

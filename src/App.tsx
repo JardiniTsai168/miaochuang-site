@@ -73,15 +73,15 @@ function Header({ onReset, studio = false }: { onReset?: () => void; studio?: bo
   return (
     <header className={`app-header ${studio ? 'is-studio' : ''}`}>
       <Brand />
-      {studio ? (
+      {studio && onReset ? (
         <button className="text-button" type="button" onClick={onReset}>
           <RotateCcw size={16} aria-hidden="true" /> 重新開始
         </button>
-      ) : (
+      ) : !studio ? (
         <div className="header-note">
           <span /> 30 天免費預覽
         </div>
-      )}
+      ) : null}
     </header>
   )
 }

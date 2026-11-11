@@ -133,7 +133,7 @@ img { max-width: 100%; }
 
 /* Importing */
 .import-screen { min-height: 100vh; background: var(--blush); }
-.import-panel { width: min(calc(100% - var(--app-gutters)), var(--app-shell)); min-height: calc(100vh - 78px); margin: 0 auto; padding: 30px 0; display: flex; align-items: center; justify-content: center; }
+.import-panel { width: min(calc(100% - var(--app-gutters)), var(--app-shell)); min-height: calc(100vh - 78px); margin: 0 auto; padding: 20px 0 30px; display: flex; align-items: flex-start; justify-content: center; }
 .import-workbench { width: min(100%, 960px); overflow: hidden; display: grid; border: 1px solid color-mix(in srgb, var(--navy) 12%, transparent); border-radius: 22px; background: var(--surface); box-shadow: 0 24px 70px rgba(65, 35, 53, .11); }
 .import-intro { min-width: 0; padding: 34px 26px 30px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; background: var(--pink-pale); text-align: left; }
 .import-orbit { position: relative; width: 74px; height: 74px; margin: 14px 0 30px 14px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); color: var(--pink-deep); box-shadow: var(--shadow-lg); }
@@ -474,7 +474,7 @@ img { max-width: 100%; }
   .how-it-works li p { margin: 0; }
   .scope-note { grid-template-columns: 1fr auto auto; align-items: center; gap: 28px; }
   .scope-note span { grid-column: auto; }
-  .import-panel { min-height: calc(100vh - 89px); padding: 40px 0; }
+  .import-panel { min-height: calc(100vh - 89px); padding: 64px 0 48px; }
   .import-workbench { min-height: 438px; grid-template-columns: 9fr 7fr; }
   .import-intro { padding: 48px 52px; }
   .import-orbit { width: 82px; height: 82px; margin: 10px 0 34px 18px; }

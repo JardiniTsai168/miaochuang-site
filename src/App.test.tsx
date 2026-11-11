@@ -65,6 +65,7 @@ describe('App', () => {
     window.history.replaceState({}, '', '/?demo=importing')
     const importing = render(<App />)
     expect(screen.getByRole('heading', { name: /正在整理資料，建立完整的店家故事/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '重新開始' })).not.toBeInTheDocument()
     importing.unmount()
 
     window.history.replaceState({}, '', '/?demo=launch')
