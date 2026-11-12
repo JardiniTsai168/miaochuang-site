@@ -9,6 +9,7 @@ lihi tools Worker 代理；`miaochuang-v2` Worker 是上游服務，不作為對
 與 `/tools/MeowSite/` 運作。需要固定子路徑輸出時可執行 `npm run build:lihi-tools`。
 
 完整產品邊界見 [`PRODUCT_CONTRACT.md`](./PRODUCT_CONTRACT.md)。
+付費組織 EmDash、多站 provisioning、lihi 後台入口與登入串接規格見 [`docs/EMDASH_ORGANIZATION_PROVISIONING_SPEC.md`](./docs/EMDASH_ORGANIZATION_PROVISIONING_SPEC.md)。
 
 ## v2 流程
 
