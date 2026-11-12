@@ -79,10 +79,12 @@
 ## 正式站 EmDash 架構
 
 - 免費生成與 30 天預覽使用共用平台，不為每個免費草稿建立獨立 Cloudflare 資源或管理後台。
-- 使用者完成 lihi 訂閱與網域購買後，才建立一站一 EmDash 的專屬後台與管理員；商家只能存取自己的網站。
-- 正式 provisioning 包含 EmDash Worker、D1、KV Session、圖片儲存、管理員邀請、Custom Domain 綁定，以及將預覽內容匯入正式站。
-- 正式站後續更新沿用同一套 EmDash 資源，不因重新部署重複建立站台。
-- provisioning webhook 以 invoice ID 做 idempotency，並驗證簽章、付款狀態、網域與 `handoffId` 後才執行。
+- 正式付費站採「一個 lihi 帳號／組織一套 EmDash」；同一組織可在同一後台建立與管理多個網站，每個網站可綁定不同網域。
+- 組織第一次完成訂閱與網域購買時，建立專屬 EmDash Worker、D1、KV Session、圖片儲存、組織管理員與第一個網站；之後新增網站沿用同一套 runtime，只建立新的 `sites` 記錄、媒體命名空間與 Custom Domain 綁定。
+- 所有網站內容、圖片、發布狀態、SEO 與網域設定必須以不可變的 `site_id` 隔離；公開請求依 hostname 對應唯一 `site_id`，不得只依可修改的 slug 判斷站台。
+- 後台提供網站切換器。組織成員只能存取自己組織的 runtime；若未來需要限制成員只能管理特定網站，再加入 site-level role，不以共用公共預覽後台取代權限隔離。
+- provisioning webhook 以 invoice ID 做 idempotency，並驗證簽章、付款狀態、網域、`handoffId` 與可信任的 lihi `organization_id` 後才執行；同一組織的後續購買必須重用既有 runtime。
+- 正式站更新與新增網域不得重複建立組織 runtime；跨組織資料、管理員與網域不得共用。
 
 ## Repo 與發布邊界
 

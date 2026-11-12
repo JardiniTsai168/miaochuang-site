@@ -17,7 +17,7 @@ lihi tools Worker 代理；`miaochuang-v2` Worker 是上游服務，不作為對
 3. 系統搭配 5 個圖片版位，使用者可逐張替換並在瀏覽器端最佳化。
 4. 使用者切換五個版型、修改內容、預覽桌機與手機版。
 5. 使用者選擇品牌網域後，先依品牌名稱取得 3 個網域建議，再前往 lihi 查詢與購買；系統同時保存不可公開的品牌 handoff。
-6. lihi 付款成功事件透過簽章 webhook 啟動正式 provisioning；完成後才建立專屬網站與 EmDash 後台。
+6. lihi 付款成功事件透過簽章 webhook 啟動正式 provisioning；首次購買建立帳號／組織專屬的 EmDash，後續網站與不同網域加入同一後台。
 7. 公開預覽保留 30 天並標記 `noindex`；未付款的 handoff 不會發布成正式網站。
 
 ## Repo 結構
@@ -62,7 +62,7 @@ npx wrangler secret put EMDASH_API_TOKEN
 - `POST /api/domain-suggestions`：依品牌名稱產生 3 個網域建議；測試期間 `DOMAIN_SUGGESTION_LIMIT_ENABLED=false` 為無限次，恢復限制時由 Durable Object 依 IP 雜湊計數最多 5 次。
 - `GET /health`：Worker health check。
 
-付款成功不能由瀏覽器回傳值判定。處理 `/ajax/checkout/tappay` 的 lihi backend 必須在 invoice 已付款且網域購買成立後，將 `source=miaochuang:<handoffId>` 以簽章 webhook 傳給 provisioning service；該 service 需做簽章驗證與 invoice idempotency，才可建立專屬 EmDash runtime 並匯入 handoff。
+付款成功不能由瀏覽器回傳值判定。處理 `/ajax/checkout/tappay` 的 lihi backend 必須在 invoice 已付款且網域購買成立後，將 `source=miaochuang:<handoffId>` 與可信任的 `organization_id` 以簽章 webhook 傳給 provisioning service；該 service 需做簽章驗證與 invoice idempotency。首次購買才建立組織專屬 EmDash runtime，後續購買須重用該 runtime，建立新的 `site_id`、匯入 handoff 並綁定對應 Custom Domain。
 
 ## Production repo 邊界
 
